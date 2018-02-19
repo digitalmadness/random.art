@@ -4,8 +4,11 @@ secret_key =
 token = 
 secret_token = 
 
+[Saucenao]
+api_key_saucenao = 
+
 [App]
-image_folder = D:/sample_text/folder_with_pics/
+image_folder = C:/replace_with__path_to_pics_folder/
 execution_chance = 5
 allow_repeat_after = 999
-log_file = C:/sample_text/folder_with_thisscript/logs/log
+log_file = C:/replace_with__path_to_bot_folder/log.txt

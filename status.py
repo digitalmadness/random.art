@@ -8,6 +8,7 @@
 / 　　づ
 """
 
+import config
 import os
 import random
 from glob import glob
@@ -30,11 +31,11 @@ class Tweet():
 
     def media(self, folder):
         """pick random image from folder and reverse search it w/ saucenao api"""
-        api_key="replacewithapikey"
         minsim='80!'
+        api_key_saucenao = config.api_key_saucenao
         media_list = glob(folder + "*")
         media = random.choice(media_list)
-        extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
+        extensions = {".jpg", ".jpeg", ".png", ".gif"}
         thumbSize = (150,150)
         picid = 0;
 
@@ -61,7 +62,7 @@ class Tweet():
         imageData = io.BytesIO()
         image.save(imageData,format='PNG')
             
-        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&dbmask='+str(db_bitmask)+'&api_key='+api_key
+        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&dbmask='+str(db_bitmask)+'&api_key='+api_key_saucenao
         print(url)
         files = {'file': ("image.png", imageData.getvalue())}
         imageData.close()

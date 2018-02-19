@@ -1,4 +1,4 @@
 :start
-pythonw.exe picbot.py
+python randomart.py
 timeout 60
 goto start

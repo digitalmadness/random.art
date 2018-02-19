@@ -7,7 +7,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 # read configs from file
 config = configparser.ConfigParser()
-config.read(dname + '/settings')
+config.read(dname + '/settings.txt')
 twitter_config = config['Twitter']
 api_key = twitter_config['api_key']
 secret_key = twitter_config['secret_key']
@@ -18,6 +18,8 @@ source_folder = app_config['image_folder']
 log_file = app_config['log_file']
 tolerance = int(app_config['allow_repeat_after'])
 chance = int(app_config['execution_chance'])
+saucenao_config = config['Saucenao']
+api_key_saucenao = saucenao_config['api_key_saucenao']
 
 auth = tweepy.OAuthHandler(api_key, secret_key)
 auth.set_access_token(token, secret_token)
