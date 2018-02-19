@@ -2,12 +2,13 @@
 | this script is based on twitterImgBot from december 2015            |
 | with integrated pixiv link generation powered by saucenao.com       |
 | 1)install python 3 and pip(checkbox in installer) then run setup.bat|
-|   (or type 'pip install pillow requests tweepy' in terminal)        |
+|   or type 'pip install pillow requests tweepy' in terminal          |
 | 2)paste twitter api keys, specify folders in /settings/settings     |
 |   (create app at https://apps.twitter.com/ and generate keys there) |
 | 3)paste api key from https://saucenao.com/user.php?page=search-api  |
-|   in line 33 of /bot/status.py file (register there to get the keys)|
-| 4)customize chance (in settings) and frequency (in .bat) or set cron|
+|   in settings.txt (register there to get the key)                   |
+| 4)customize chance (in settings) and frequency (in .bat)            |
+|   or set cron job to run randomart.py                               |
 |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿|
  ∧＿_∧  ||
 (　´ω` )||  
