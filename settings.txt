@@ -11,4 +11,4 @@ api_key_saucenao =
 image_folder = D:/replace_with__path_to_pics_folder/
 execution_chance = 5
 allow_repeat_after = 999
-log_file = log.txt
+log_file = /log.txt
