@@ -1,6 +1,0 @@
-*.pyc
-*.swp
-
-logs/banned
-logs/log
-settings/settings
