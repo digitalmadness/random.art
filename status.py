@@ -25,7 +25,7 @@ from collections import OrderedDict
 from pyfiglet import Figlet
 
 """handles statuses from bot, reverse searches pics and
-makes sure it doesn't post anything repeated (specify how much pics before repeat in config)"""
+makes sure it doesn't post anything repeated or pics not found on saucenao (specify how much pics before repeat in config)"""
 
 
 class Tweet():
@@ -151,12 +151,12 @@ class Tweet():
                 
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
-                    media = False
+                    media = False # picture not found in art database
                     return media
                 
             else:
                 print('no results... ;_;')
-                media = False
+                media = False # picture is definetly not found in art database
                 return media
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
@@ -190,13 +190,13 @@ class Tweet():
 
 def tweet(tweet_media, tweet_text, reply_id, api):
     """sends tweet command to Tweepy"""
-    if tweet_media != False:
+    if tweet_media != False: # checking if picture is in art database
         api.update_with_media(
             filename=tweet_media,
             status=tweet_text,
             in_reply_to_status_id=reply_id)
     else:
-        print('this pic is not art, aborting\n')
+        print('picture not found in art database, aborting\n')
 
 
 def is_already_tweeted(log_file, image, tolerance):
