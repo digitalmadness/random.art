@@ -8,6 +8,7 @@
 | 3)paste api key from https://saucenao.com/user.php?page=search-api  |
 |   in settings.txt (register there to get the key)                   |
 | 4)customize chance and frequency in settings.txt                    |
+| 5)run with randomart.py                                             |
 |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿|
  ∧＿_∧  ||
 (　´ω` )||  
