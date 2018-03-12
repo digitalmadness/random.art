@@ -10,5 +10,6 @@ api_key_saucenao =
 [App]
 image_folder = C:/replace_with__path_to_pics_folder/
 execution_chance = 5
-allow_repeat_after = 999
+time_between_tweets = 30
+allow_repeat_after = 9999
 log_file = C:/Users/Public/randomartlog.txt
