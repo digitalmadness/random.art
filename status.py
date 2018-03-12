@@ -22,6 +22,7 @@ import codecs
 import re
 import time
 from collections import OrderedDict
+from pyfiglet import Figlet
 
 """handles statuses from bot, reverse searches pics and
 makes sure it doesn't post anything repeated (specify how much pics before repeat in config)"""
@@ -144,15 +145,19 @@ class Tweet():
                     
                     else:
                         #unknown error
-                        print('something happened')
+                        print('something happened!')
                     picid = illust_id
                     print('pixiv id: ', picid)
                 
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
+                    media = False
+                    return media
                 
             else:
                 print('no results... ;_;')
+                media = False
+                return media
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('Out of searches for today. Sleeping for 1 hour...')
@@ -185,10 +190,13 @@ class Tweet():
 
 def tweet(tweet_media, tweet_text, reply_id, api):
     """sends tweet command to Tweepy"""
-    api.update_with_media(
-        filename=tweet_media,
-        status=tweet_text,
-        in_reply_to_status_id=reply_id)
+    if tweet_media != False:
+        api.update_with_media(
+            filename=tweet_media,
+            status=tweet_text,
+            in_reply_to_status_id=reply_id)
+    else:
+        print('this pic is not art, aborting\n')
 
 
 def is_already_tweeted(log_file, image, tolerance):
@@ -204,3 +212,14 @@ def is_already_tweeted(log_file, image, tolerance):
     for element in already_tweeted:
         if element.split('\t')[1] == image:
             return True
+
+
+def welcome():
+    y = Figlet(font='slant')
+    print(y.renderText("""random art v2"""))
+    print('logging in..\n')
+    api = config.api
+    myid = api.me()
+    print('welcome, @' + myid.screen_name + '!\n')
+    path, dirs, files = os.walk(config.source_folder).__next__()
+    print('tweeting',str(len(files)),'pictures from', config.source_folder, 'every', str(config.interval), 'seconds with', str(config.chance), '% chance..\n')

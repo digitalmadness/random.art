@@ -18,6 +18,7 @@ source_folder = app_config['image_folder']
 log_file = app_config['log_file']
 tolerance = int(app_config['allow_repeat_after'])
 chance = int(app_config['execution_chance'])
+interval = int(app_config['time_between_tweets'])
 saucenao_config = config['Saucenao']
 api_key_saucenao = saucenao_config['api_key_saucenao']
 

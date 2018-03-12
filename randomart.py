@@ -6,6 +6,7 @@ import logger
 import random
 import argparse
 import sys
+from time import sleep
 
 """uses all other modules to post tweets if chance is met, 
 calls the logger and parses the CLI arguments"""
@@ -40,17 +41,24 @@ def parse_args(args):
 
 def main():
     """runs the whole program"""
+    global api  # it's used absolutely everywhere, so might as well be global
+    api = config.api
+    status.welcome()
     args = parse_args(sys.argv[1:])
     test = args.test
     forceTweet = args.tweet
-    global api  # it's used absolutely everywhere, so might as well be global
-    api = config.api
-    if random.randint(0, 99) < config.chance or test or forceTweet:
-        try:
-            post_tweet(None, None, test)
-        except RuntimeError:
-            warning = "!CRITICAL! no non-repeated images found"
-            logger.addWarning(warning, config.log_file)
+    while True:
+        if random.randint(0, 99) < config.chance or test or forceTweet:
+            try:
+                post_tweet(None, None, test)
+            except RuntimeError:
+                warning = "!CRITICAL! no non-repeated images found"
+                logger.addWarning(warning, config.log_file)
+            if forceTweet:
+                break
+        else:
+            print('wait for it..')
+        sleep(config.interval)
 
 if __name__ == "__main__":
     main()

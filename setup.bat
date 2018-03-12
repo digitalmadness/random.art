@@ -1,3 +1,3 @@
-pip install pillow requests tweepy
+pip install pillow requests tweepy pyfiglet
 msg * "dependencies successfully installed! check readme.txt for step 2"
 notepad readme.txt
