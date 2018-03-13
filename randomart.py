@@ -14,6 +14,7 @@ calls the logger and parses the CLI arguments"""
 
 def post_tweet(text, reply_id, test=False):
     """sending tweet"""
+    api = config.api
     tweet = status.Tweet()
     media = tweet.media(config.source_folder)
     tweet_text = tweet.text(text)

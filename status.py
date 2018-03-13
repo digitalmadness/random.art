@@ -205,7 +205,7 @@ def tweet(tweet_media, tweet_text, reply_id, api):
         logger.addPost(tweet_media, artornot, config.log_file)
     else:
         print('picture not found in art database, retrying..\n')
-        randomart.post_tweet(None, None, test)
+        randomart.post_tweet(None, None)
 
 
 def is_already_tweeted(log_file, image, tolerance):
