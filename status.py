@@ -9,6 +9,8 @@
 """
 
 import config
+import logger
+import randomart
 import os
 import random
 from glob import glob
@@ -41,19 +43,19 @@ class Tweet():
         picid = 0;
 
         #left them in case u want to integrate that services too
-        index_hmags='0'
-        index_hanime='0'
-        index_hcg='0'
-        index_ddbobjects='0'
-        index_ddbsamples='0'
+        index_hmags='1'
+        index_hanime='1'
+        index_hcg='1'
+        index_ddbobjects='1'
+        index_ddbsamples='1'
         index_pixiv='1'
         index_pixivhistorical='1'
-        index_anime='0'
-        index_seigaillust='0'
+        index_anime='1'
+        index_seigaillust='1'
         index_danbooru='1'
-        index_drawr='0'
-        index_nijie='0'
-        index_yandere='0'
+        index_drawr='1'
+        index_nijie='1'
+        index_yandere='1'
 
         #generating bitmask
         db_bitmask = int(index_yandere+index_nijie+index_drawr+index_danbooru+index_seigaillust+index_anime+index_pixivhistorical+index_pixiv+index_ddbsamples+index_ddbobjects+index_hcg+index_hanime+index_hmags,2)
@@ -151,11 +153,15 @@ class Tweet():
                 
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
+                    artornot = 'not_art'
+                    logger.addPost(media, artornot, config.log_file)
                     media = False # picture not found in art database
                     return media
                 
             else:
                 print('no results... ;_;')
+                artornot = 'not_art'
+                logger.addPost(media, artornot, config.log_file)
                 media = False # picture is definetly not found in art database
                 return media
 
@@ -181,7 +187,7 @@ class Tweet():
         return media
 
     def text(self, text):
-        """left it in case u want to customuze text"""
+        """left it in case u want to customize text"""
         f = open('last.kartinko.id', 'r')
         text = f.read()
         f.close()
@@ -195,8 +201,11 @@ def tweet(tweet_media, tweet_text, reply_id, api):
             filename=tweet_media,
             status=tweet_text,
             in_reply_to_status_id=reply_id)
+        artornot = 'art'
+        logger.addPost(tweet_media, artornot, config.log_file)
     else:
-        print('picture not found in art database, aborting\n')
+        print('picture not found in art database, retrying..\n')
+        randomart.post_tweet(None, None, test)
 
 
 def is_already_tweeted(log_file, image, tolerance):

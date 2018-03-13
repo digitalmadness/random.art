@@ -18,7 +18,7 @@ api = config.api
 myid = api.me()
 print('welcome, @' + myid.screen_name + '!')
 
-for tweet in tweepy.Cursor(api.search, q='#相互フォロー').items(): # <== SET HASHTAG LIMIT HERE (increase this daily by no more than 999 so u dont get banned)
+for tweet in tweepy.Cursor(api.search, q='#相互フォロー').items(): # <== SET HASHTAG HERE
     try:
         already_followed_state = False
         username = tweet.user.screen_name
@@ -30,8 +30,8 @@ for tweet in tweepy.Cursor(api.search, q='#相互フォロー').items(): # <== S
                 already_followed_state = True
         if not tweet.user.following:
             if not already_followed_state:
-                if len(already_followed) >= 1000: # <== SET FOLLOW LIMIT HERE (increase this daily by no more than 999 so u dont get banned)
-                    print('mission completion, this window will close in 5 sec')
+                if len(already_followed) >= 3100: # <== SET FOLLOW LIMIT HERE (increase this daily by no more than 999 so u dont get banned)
+                    print('\nmission completion, this window will close in 5 sec')
                     sleep(5)
                     break
                 tweet.user.follow()
@@ -39,10 +39,13 @@ for tweet in tweepy.Cursor(api.search, q='#相互フォロー').items(): # <== S
                 #tweet.favorite(); print('liked the tweet')                                                          # optionally like tweet
                 with open('autofollow_log.txt', 'a') as log:
                     log.write(tweet.user.screen_name + '\n')
-                sleep(5)
+                sleep(3)
 
     except tweepy.TweepError as e:
-        print(e.reason)
+        print('\ntweepy error!\n' + e.reason)
+        if '161' in str(e.reason):
+            print('\ncode 161 detected! you probably ran out of daily following limit\n\nTWITTER REJECTED FOLLOW\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 2 hours before next try..')
+            sleep(2*60*60)
 
     except StopIteration:
         break

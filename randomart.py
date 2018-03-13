@@ -24,7 +24,6 @@ def post_tweet(text, reply_id, test=False):
         return post_tweet(text, reply_id)  # just try again
     if not test:
         status.tweet(media, tweet_text, reply_id, api)
-        logger.addPost(media, reply_id, log)
     if test:
         logger.addPost(media, "TEST", log)
 
