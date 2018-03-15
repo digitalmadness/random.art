@@ -8,7 +8,7 @@ import config
 
 # SETTINGS
 
-search_phrase = '#相互フォロ' #will search tweets containing this word, i recommend using hashtag
+search_phrase = '#相互' #will search tweets containing this word, i recommend using hashtag
 
 following_limit = 9999
 

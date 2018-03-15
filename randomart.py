@@ -54,10 +54,14 @@ def main():
             except RuntimeError:
                 warning = "!CRITICAL! no non-repeated images found"
                 logger.addWarning(warning, config.log_file)
+            except:
+                print ('something fucked up, restarting bot in 5 seconds..\n\nif this happens too often pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
+                sleep(5)
+                main()
             if forceTweet:
                 break
         else:
-            print('wait for it..')
+            print('sleeping for',config.interval,'s..')
         sleep(config.interval)
 
 if __name__ == "__main__":
