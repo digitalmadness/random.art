@@ -59,7 +59,6 @@ class Tweet():
         image.thumbnail(thumbSize, Image.ANTIALIAS)
         imageData = io.BytesIO()
         image.save(imageData,format='PNG')
-            
         url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+api_key_saucenao
         print(url)
         files = {'file': ("image.png", imageData.getvalue())}
@@ -67,15 +66,19 @@ class Tweet():
                         
         processResults = True
         while True:
-            r = requests.post(url, files=files)
+            try:
+                r = requests.post(url, files=files, timeout=60)
+            except Exception as eeee:
+                print(eeee)
+                return media,'[saucenao.com api not avalivable]','na'
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
                     print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api\n\nexiting in 5sec..')
                     sleep(5)
                     sys.exit(1)
                 elif r.status_code == 429:
-                    print('request limit exceeded')
-                    break
+                    print('saucenao.com api requests limit exceeded!')
+                    return media,'[saucenao.com api requests limit exceeded]','na'
                 else:
                     print("status code: "+str(r.status_code))
             else:
@@ -137,30 +140,32 @@ class Tweet():
                             pixiv_id=results['results'][0]['data']['pixiv_id']
                         except Exception as eeee:
                             print(eeee)
+                            print('not found..')
                         try:
                             ext_urls=results['results'][0]['data']['ext_urls']
                         except Exception as eeee:
                             print(eeee)
+                            print('not found..')
                         try:
                             creator=results['results'][0]['data']['creator']
                         except Exception as eeee:
                             print(eeee)
+                            print('not found..')
                         try:
                             source=results['results'][0]['data']['source']
                         except Exception as eeee:
                             print(eeee)
+                            print('not found..')
 
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
-                    artornot = 'not_art'
                     logger.addPost(media, artornot, config.log_file)
-                    return media,tweetxt,artornot
+                    return media,tweetxt,'not_art'
                 
             else:
                 print('no results... ;_;')
-                artornot = 'not_art'
                 logger.addPost(media, artornot, config.log_file)
-                return media,tweetxt,artornot
+                return media,tweetxt,'not_art'
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('Out of searches for today. Sleeping for 1 hour...')
