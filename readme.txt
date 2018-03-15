@@ -10,7 +10,7 @@
 |   in settings.txt (register there to get the key)                   |
 | 4)customize chance of tweeting and frequency in settings.txt        |
 | 5)run with randomart.py                                             |
-| 6)optionally run autofollow.py for marketing purposes               |
+| 6)(opt)run autofollow.py for marketing purpose(edit settings inside)|
 |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿|
  ∧＿_∧  ||
 (　´ω` )||  
