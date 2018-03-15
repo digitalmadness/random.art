@@ -47,6 +47,7 @@ class Tweet():
         artornot = 'art'
         tweetxt = ''
         ext_urls = ''
+        ext_url = ''
         est_time = ''
         minsim='70!'
         api_key_saucenao = config.api_key_saucenao
@@ -172,19 +173,32 @@ class Tweet():
                 time.sleep(25)
                         
         if pixiv_id != 0:
-             tweetxt = str(title) + ' by ' + str(member_name) + ' [http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
+             tweetxt = str(title) + ' by ' + str(member_name) + ' http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id)
              return media,tweetxt,artornot
         if deviantart_id != 0:
-            tweetxt = str(title) + ' by '+ str(author_name) + ' [https://deviantart.com/view/' + str(deviantart_id) + ']'
+            tweetxt = str(title) + ' by '+ str(author_name) + ' https://deviantart.com/view/' + str(deviantart_id)
             return media,tweetxt,artornot
         if part != 0:
-            tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_urls)
+            ext_url = ext_urls[0]
+            tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_url)
             return media,tweetxt,artornot
         if ext_urls != '':
-            tweetxt = str(source) + ' by ' + str(creator) + ' ' + str(ext_urls)
+            for x in ext_urls:
+                if 'danbooru.donmai.us' in x:
+                    ext_url = x
+                    break
+                elif 'yande.re' in x:
+                    ext_url = x
+                    break
+                elif 'chan.sankakucomplex.com' in x:
+                    ext_url = x
+                    break
+            if ext_url == '':
+                ext_url = ext_urls[0]
+            tweetxt = str(source) + ' by ' + str(creator) + ' ' + ext_url
             return media,tweetxt,artornot
-
-        return media,tweetxt,artornot
+        else:
+            return media,tweetxt,artornot
 
 
 def tweet(tweet_media, tweet_text, reply_id, api):
