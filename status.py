@@ -80,7 +80,7 @@ class Tweet():
                     print('saucenao.com api requests limit exceeded!')
                     return media,'[saucenao.com api requests limit exceeded]','na'
                 else:
-                    print("status code: "+str(r.status_code))
+                    print('saucenao.com api unknown error! status code: '+str(r.status_code))
             else:
                 '''f = open('last.saucenao.response.json', 'w') # DEBUG
                 f.write(r.text)
@@ -94,9 +94,6 @@ class Tweet():
                         break
                     else:
                         if int(results['header']['status'])>0:
-                            #One or more indexes are having an issue.
-                            #This search is considered partially successful, even if all indexes failed, so is still counted against your limit.
-                            #The error may be transient, but because we don't want to waste searches, allow time for recovery.
                             print('search is failed, problem w/ saucenao indexes')
                             break
                         else:
@@ -187,7 +184,6 @@ class Tweet():
             tweetxt = str(source) + ' by ' + str(creator) + ' ' + str(ext_urls)
             return media,tweetxt,artornot
 
-
         return media,tweetxt,artornot
 
 
@@ -215,8 +211,9 @@ def is_already_tweeted(log_file, image, tolerance):
 
 
 def welcome():
+    """startup message"""
     y = Figlet(font='slant')
-    print(y.renderText("""random art v2"""))
+    print(y.renderText("""random art v3"""))
     print('logging in..\n')
     api = config.api
     myid = api.me()
