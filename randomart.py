@@ -16,15 +16,15 @@ def post_tweet(text, reply_id, test=False):
     """sending tweet"""
     api = config.api
     tweet = status.Tweet()
-    media = tweet.media(config.source_folder)
-    tweet_text = tweet.text(text)
+    media,tweetxt,artornot = tweet.media(config.source_folder)
     log = config.log_file
     tolerance = config.tolerance
     already_tweeted = status.is_already_tweeted(log, media, tolerance)
-    if already_tweeted:
+    if already_tweeted or artornot == 'notart':
         return post_tweet(text, reply_id)  # just try again
     if not test:
-        status.tweet(media, tweet_text, reply_id, api)
+        status.tweet(media, tweetxt, reply_id, api)
+        logger.addPost(media, artornot, config.log_file)
     if test:
         logger.addPost(media, "TEST", log)
 
@@ -54,9 +54,10 @@ def main():
             except RuntimeError:
                 warning = "!CRITICAL! no non-repeated images found"
                 logger.addWarning(warning, config.log_file)
-            except:
-                print ('something fucked up, restarting bot in 5 seconds..\n\nif this happens too often pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
-                sleep(5)
+            except Exception as e:
+                print(e)
+                print ('something fucked up, restarting bot in 60 seconds..\n\nif this happens too often pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
+                sleep(60)
                 main()
             if forceTweet:
                 break

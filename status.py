@@ -10,7 +10,6 @@
 
 import config
 import logger
-import randomart
 import os
 import random
 from glob import glob
@@ -34,38 +33,34 @@ class Tweet():
 
     def media(self, folder):
         """pick random image from folder and reverse search it w/ saucenao api"""
-        minsim='80!'
+        service_name = ''
+        part = 0
+        creator = ''
+        source = ''
+        pixiv_id = 0
+        deviantart_id = 0
+        creator = ''
+        author_name = ''
+        member_name = ''
+        title = ''
+        source = ''
+        artornot = 'art'
+        tweetxt = ''
+        ext_urls = ''
+        est_time = ''
+        minsim='70!'
         api_key_saucenao = config.api_key_saucenao
         media_list = glob(folder + "*")
         media = random.choice(media_list)
         extensions = {".jpg", ".jpeg", ".png", ".gif"}
         thumbSize = (150,150)
-        picid = 0;
-
-        #left them in case u want to integrate that services too
-        index_hmags='1'
-        index_hanime='1'
-        index_hcg='1'
-        index_ddbobjects='1'
-        index_ddbsamples='1'
-        index_pixiv='1'
-        index_pixivhistorical='1'
-        index_anime='1'
-        index_seigaillust='1'
-        index_danbooru='1'
-        index_drawr='1'
-        index_nijie='1'
-        index_yandere='1'
-
-        #generating bitmask
-        db_bitmask = int(index_yandere+index_nijie+index_drawr+index_danbooru+index_seigaillust+index_anime+index_pixivhistorical+index_pixiv+index_ddbsamples+index_ddbobjects+index_hcg+index_hanime+index_hmags,2)
 
         image = Image.open(media)
         image.thumbnail(thumbSize, Image.ANTIALIAS)
         imageData = io.BytesIO()
         image.save(imageData,format='PNG')
             
-        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&dbmask='+str(db_bitmask)+'&api_key='+api_key_saucenao
+        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+api_key_saucenao
         print(url)
         files = {'file': ("image.png", imageData.getvalue())}
         imageData.close()
@@ -75,7 +70,8 @@ class Tweet():
             r = requests.post(url, files=files)
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
-                    print('api key error! setup proper api key from https://saucenao.com/ to continue')
+                    print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api\n\nexiting in 5sec..')
+                    sleep(5)
                     sys.exit(1)
                 elif r.status_code == 429:
                     print('request limit exceeded')
@@ -83,6 +79,9 @@ class Tweet():
                 else:
                     print("status code: "+str(r.status_code))
             else:
+                '''f = open('last.saucenao.response.json', 'w') # DEBUG
+                f.write(r.text)
+                f.close()'''
                 results = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
                 if int(results['header']['user_id'])>0:
                     #api responded
@@ -111,59 +110,57 @@ class Tweet():
                     break
                 
         if processResults:
-            #print(results)
                             
             if int(results['header']['results_returned']) > 0:
                 #one or more results were returned
                 if float(results['results'][0]['header']['similarity']) > float(results['header']['minimum_similarity']):
                     print('hit! '+str(results['results'][0]['header']['similarity']))
-
-                    #get vars to use
-                    service_name = ''
-                    illust_id = 0
-                    try:
-                        member_id = results['results'][0]['data']['member_id']
-                    except KeyError:
-                        print('pixiv id not found')
-                    finally:
-                        index_id = results['results'][0]['header']['index_id']
-                        page_string = ''
-                        page_match = re.search('(_p[\d]+)\.', results['results'][0]['header']['thumbnail'])
+                    
+                    index_id = results['results'][0]['header']['index_id']
                             
-                    if page_match:
-                        page_string = page_match.group(1)
-                        
                     if index_id == 5 or index_id == 6:
                         #5->pixiv 6->pixiv historical
-                        service_name='pixiv'
-                        illust_id=results['results'][0]['data']['pixiv_id']
-                    elif index_id == 8: 
-                        #8->danbooru
-                        service_name='danbooru'
-                        try:
-                            illust_id=results['results'][0]['data']['danbooru_id']
-                        except KeyError:
-                            print('pixiv id not found on danbooru')
-                    
+                        pixiv_id=results['results'][0]['data']['pixiv_id']
+                        member_name=results['results'][0]['data']['member_name']
+                        title=results['results'][0]['data']['title']
+                    elif index_id == 34:
+                        deviantart_id=results['results'][0]['data']['da_id']
+                        author_name=['results'][0]['data']['author_name']
+                        title=results['results'][0]['data']['title']
+                    elif index_id == 21: 
+                        part=results['results'][0]['data']['part']
+                        est_time=results['results'][0]['data']['est_time']
+                        source=results['results'][0]['data']['source']
+                        ext_urls=results['results'][0]['data']['ext_urls']
                     else:
-                        #unknown error
-                        print('something happened!')
-                    picid = illust_id
-                    print('pixiv id: ', picid)
-                
+                        try:
+                            pixiv_id=results['results'][0]['data']['pixiv_id']
+                        except Exception as eeee:
+                            print(eeee)
+                        try:
+                            ext_urls=results['results'][0]['data']['ext_urls']
+                        except Exception as eeee:
+                            print(eeee)
+                        try:
+                            creator=results['results'][0]['data']['creator']
+                        except Exception as eeee:
+                            print(eeee)
+                        try:
+                            source=results['results'][0]['data']['source']
+                        except Exception as eeee:
+                            print(eeee)
+
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
                     artornot = 'not_art'
                     logger.addPost(media, artornot, config.log_file)
-                    media = False # picture not found in art database
-                    return media
+                    return media,tweetxt,artornot
                 
             else:
                 print('no results... ;_;')
                 artornot = 'not_art'
                 logger.addPost(media, artornot, config.log_file)
-                media = False # picture is definetly not found in art database
-                return media
+                return media,tweetxt,artornot
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('Out of searches for today. Sleeping for 1 hour...')
@@ -172,40 +169,29 @@ class Tweet():
                 print('out of searches for this 30 second period. sleeping for 25 seconds...')
                 time.sleep(25)
                         
-        print('tweeting file:', media)
-        f = open('last.kartinko.id', 'w')
-        if picid != 0:
-            f.write('http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(picid))
-        else:
-            picname = os.path.splitext(os.path.basename(media))[0]
-            if len(picname) == 32: #trying to guess by checking if filename is md5, because i have many pics downloaded from danbooru
-                f.write('https://danbooru.donmai.us/posts?tags=md5%3A' + picname)
-                print('pic probably from danbooru')
-            else:
-                f.write('')
-        f.close()
-        return media
+        if pixiv_id != 0:
+             tweetxt = str(title) + ' by ' + str(member_name) + ' [http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
+             return media,tweetxt,artornot
+        if deviantart_id != 0:
+            tweetxt = str(title) + ' by '+ str(author_name) + ' [https://deviantart.com/view/' + str(deviantart_id) + ']'
+            return media,tweetxt,artornot
+        if part != 0:
+            tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_urls)
+            return media,tweetxt,artornot
+        if ext_urls != '':
+            tweetxt = str(source) + ' by ' + str(creator) + ' ' + str(ext_urls)
+            return media,tweetxt,artornot
 
-    def text(self, text):
-        """left it in case u want to customize text"""
-        f = open('last.kartinko.id', 'r')
-        text = f.read()
-        f.close()
-        return text
+
+        return media,tweetxt,artornot
 
 
 def tweet(tweet_media, tweet_text, reply_id, api):
     """sends tweet command to Tweepy"""
-    if tweet_media != False: # checking if picture is in art database
-        api.update_with_media(
-            filename=tweet_media,
-            status=tweet_text,
-            in_reply_to_status_id=reply_id)
-        artornot = 'art'
-        logger.addPost(tweet_media, artornot, config.log_file)
-    else:
-        print('picture not found in art database, retrying..\n')
-        randomart.post_tweet(None, None)
+    api.update_with_media(
+        filename=tweet_media,
+        status=tweet_text,
+        in_reply_to_status_id=reply_id)
 
 
 def is_already_tweeted(log_file, image, tolerance):
