@@ -149,12 +149,12 @@ class Tweet():
 
                 else:
                     print('miss... '+str(results['results'][0]['header']['similarity']))
-                    logger.addPost(media, artornot, config.log_file)
+                    logger.addPost(media, 'not_art', config.log_file)
                     return media,tweetxt,'not_art'
                 
             else:
                 print('no results... ;_;')
-                logger.addPost(media, artornot, config.log_file)
+                logger.addPost(media, 'not_art', config.log_file)
                 return media,tweetxt,'not_art'
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
