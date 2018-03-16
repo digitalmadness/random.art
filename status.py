@@ -38,10 +38,8 @@ class Tweet():
         creator = ''
         source = ''
         pixiv_id = 0
-        creator = ''
         member_name = ''
         title = ''
-        source = ''
         artornot = 'art'
         tweetxt = ''
         ext_urls = ''
