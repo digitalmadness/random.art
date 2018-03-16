@@ -8,7 +8,7 @@ import config
 
 # SETTINGS
 
-search_phrase = '#相互' #will search tweets containing this word, i recommend using hashtag
+search_phrase = '#相互フォロー' #will search tweets containing this word, i recommend using hashtag
 
 following_limit = 9999
 
@@ -37,17 +37,18 @@ for tweet in tweepy.Cursor(api.search, q=search_phrase).items(): # <== SET HASHT
         is_following_us_state = False
         already_followed_state = False
         username = tweet.user.screen_name
+        userid = tweet.user.id
         print('\nfound tweet by @' + username)
         with open('autofollow_log.txt', 'r') as f:
             already_followed = [line.rstrip('\n') for line in f] #check users who we followed so far from autofollow_log.txt
         for x in already_followed:
             if x == username:
                 already_followed_state = True #user was already followed once by script
-        for z in followers_array:
-            if z == username:
+        for x in followers_array:
+            if x == userid:
                 is_following_us_state = True #user is already following us, no need to waste daily limit
-        if is_following_us_state == True and follow_those_who_already_follows_you == False:
-            print('user already follows us, skipping..')
+        if is_following_us_state == True and follow_those_who_already_follows_you != True:
+            print('this user already follows us, skipping..')
         else:
             if tweet.user.following:
                 print('already following this user..')
@@ -60,10 +61,10 @@ for tweet in tweepy.Cursor(api.search, q=search_phrase).items(): # <== SET HASHT
                         sleep(5)
                         break
                     tweet.user.follow()
-                    print('followed the user, total so far: ' + str(len(already_followed)))
+                    print('followed this user, total so far: ' + str(len(already_followed)))
                     if also_like_the_tweet == True:
                         tweet.favorite()
-                        print('liked the tweet')
+                        print('liked this tweet')
                     with open('autofollow_log.txt', 'a') as log:
                         log.write(tweet.user.screen_name + '\n') #log usernames for future checks
                     sleep(3)
