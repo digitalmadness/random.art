@@ -38,9 +38,7 @@ class Tweet():
         creator = ''
         source = ''
         pixiv_id = 0
-        deviantart_id = 0
         creator = ''
-        author_name = ''
         member_name = ''
         title = ''
         source = ''
@@ -124,10 +122,6 @@ class Tweet():
                         pixiv_id=results['results'][0]['data']['pixiv_id']
                         member_name=results['results'][0]['data']['member_name']
                         title=results['results'][0]['data']['title']
-                    elif index_id == 34:
-                        deviantart_id=results['results'][0]['data']['da_id']
-                        author_name=['results'][0]['data']['author_name']
-                        title=results['results'][0]['data']['title']
                     elif index_id == 21: 
                         part=results['results'][0]['data']['part']
                         est_time=results['results'][0]['data']['est_time']
@@ -175,26 +169,12 @@ class Tweet():
         if pixiv_id != 0:
              tweetxt = str(title) + ' by ' + str(member_name) + ' http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id)
              return media,tweetxt,artornot
-        if deviantart_id != 0:
-            tweetxt = str(title) + ' by '+ str(author_name) + ' https://deviantart.com/view/' + str(deviantart_id)
-            return media,tweetxt,artornot
         if part != 0:
             ext_url = ext_urls[0]
             tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_url)
             return media,tweetxt,artornot
         if ext_urls != '':
-            for x in ext_urls:
-                if 'danbooru.donmai.us' in x:
-                    ext_url = x
-                    break
-                elif 'yande.re' in x:
-                    ext_url = x
-                    break
-                elif 'chan.sankakucomplex.com' in x:
-                    ext_url = x
-                    break
-            if ext_url == '':
-                ext_url = ext_urls[0]
+            ext_url = ext_urls[0] #just use first provided link
             tweetxt = str(source) + ' by ' + str(creator) + ' ' + ext_url
             return media,tweetxt,artornot
         else:
