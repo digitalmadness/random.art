@@ -24,4 +24,4 @@ api_key_saucenao = saucenao_config['api_key_saucenao']
 
 auth = tweepy.OAuthHandler(api_key, secret_key)
 auth.set_access_token(token, secret_token)
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
