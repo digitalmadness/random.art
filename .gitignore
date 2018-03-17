@@ -1,5 +1,3 @@
 *.pyc
-settings.txt
-autofollow_log.txt
+*.txt
 test.bat
-last.saucenao.response.json
