@@ -13,3 +13,9 @@ execution_chance = 5
 time_between_tweets = 30
 allow_repeat_after = 9999
 log_file = C:/Users/Public/randomartlog.txt
+
+[Autofollow]
+search_phrase = #replace_with_hashtag
+custom_following_limit = 9999
+follow_those_who_already_follow_you = 
+like_all_found_tweets = 
