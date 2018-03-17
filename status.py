@@ -144,7 +144,7 @@ class Tweet():
                             print(eeee,'not found..')
 
                 else:
-                    print('miss... '+str(results['results'][0]['header']['similarity'],'trying another pic..'))
+                    print('miss... '+str(results['results'][0]['header']['similarity']), 'trying another pic..')
                     logger.addPost(media, 'not_art', config.log_file)
                     return media,tweetxt,'not_art'
                 
