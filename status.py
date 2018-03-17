@@ -129,26 +129,22 @@ class Tweet():
                         try:
                             pixiv_id=results['results'][0]['data']['pixiv_id']
                         except Exception as eeee:
-                            print(eeee)
-                            print('not found..')
+                            print(eeee,'not found..')
                         try:
                             ext_urls=results['results'][0]['data']['ext_urls']
                         except Exception as eeee:
-                            print(eeee)
-                            print('not found..')
+                            print(eeee,'not found..')
                         try:
                             creator=results['results'][0]['data']['creator']
                         except Exception as eeee:
-                            print(eeee)
-                            print('not found..')
+                            print(eeee,'not found..')
                         try:
                             source=results['results'][0]['data']['source']
                         except Exception as eeee:
-                            print(eeee)
-                            print('not found..')
+                            print(eeee,'not found..')
 
                 else:
-                    print('miss... '+str(results['results'][0]['header']['similarity']))
+                    print('miss... '+str(results['results'][0]['header']['similarity'],'trying another pic..'))
                     logger.addPost(media, 'not_art', config.log_file)
                     return media,tweetxt,'not_art'
                 
