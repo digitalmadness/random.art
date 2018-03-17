@@ -13,15 +13,12 @@ import logger
 import os
 import random
 from glob import glob
-import sys
 import io
-import unicodedata
 import requests
 from PIL import Image
 import json
 import codecs
-import re
-import time
+from time import sleep
 from collections import OrderedDict
 from pyfiglet import Figlet
 
@@ -40,7 +37,6 @@ class Tweet():
         pixiv_id = 0
         member_name = ''
         title = ''
-        artornot = 'art'
         tweetxt = ''
         ext_urls = ''
         ext_url = ''
@@ -70,9 +66,8 @@ class Tweet():
                 return media,'[saucenao.com api not avalivable]','na'
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
-                    print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api\n\nexiting in 5sec..')
-                    sleep(5)
-                    sys.exit(1)
+                    print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
+                    sleep(60*60*24)
                 elif r.status_code == 429:
                     print('saucenao.com api requests limit exceeded!')
                     return media,'[saucenao.com api requests limit exceeded]','na'
@@ -91,18 +86,16 @@ class Tweet():
                         break
                     else:
                         if int(results['header']['status'])>0:
-                            print('search is failed, problem w/ saucenao indexes')
                             break
                         else:
                             #Problem with search as submitted, bad image, or impossible request.
                             #Issue is unclear, so don't flood requests.
-                            print('search is failed, corrupted image or problem w/ saucenao api')
+                            print('problem with search as submitted, bad image, or impossible request')
                             processResults = False
                             break
                 else:
                     #General issue, api did not respond. Normal site took over for this error state.
                     #Issue is unclear, so don't flood requests.
-                    print('search is failed, corrupted image or saucenao api did not respond')
                     processResults = False
                     break
                 
@@ -110,43 +103,47 @@ class Tweet():
                             
             if int(results['header']['results_returned']) > 0:
                 #one or more results were returned
-                if float(results['results'][0]['header']['similarity']) > float(results['header']['minimum_similarity']):
-                    print('hit! '+str(results['results'][0]['header']['similarity']))
+                try :
+                    if float(results['results'][0]['header']['similarity']) > float(results['header']['minimum_similarity']):
+                        print('hit! '+str(results['results'][0]['header']['similarity']))
                     
-                    index_id = results['results'][0]['header']['index_id']
+                        index_id = results['results'][0]['header']['index_id']
                             
-                    if index_id == 5 or index_id == 6:
-                        #5->pixiv 6->pixiv historical
-                        pixiv_id=results['results'][0]['data']['pixiv_id']
-                        member_name=results['results'][0]['data']['member_name']
-                        title=results['results'][0]['data']['title']
-                    elif index_id == 21: 
-                        part=results['results'][0]['data']['part']
-                        est_time=results['results'][0]['data']['est_time']
-                        source=results['results'][0]['data']['source']
-                        ext_urls=results['results'][0]['data']['ext_urls']
-                    else:
-                        try:
+                        if index_id == 5 or index_id == 6:
+                            #5->pixiv 6->pixiv historical
                             pixiv_id=results['results'][0]['data']['pixiv_id']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
-                            ext_urls=results['results'][0]['data']['ext_urls']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
-                            creator=results['results'][0]['data']['creator']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
+                            member_name=results['results'][0]['data']['member_name']
+                            title=results['results'][0]['data']['title']
+                        elif index_id == 21: 
+                            part=results['results'][0]['data']['part']
+                            est_time=results['results'][0]['data']['est_time']
                             source=results['results'][0]['data']['source']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
+                            ext_urls=results['results'][0]['data']['ext_urls']
+                        else:
+                            try:
+                                pixiv_id=results['results'][0]['data']['pixiv_id']
+                            except Exception as eeee:
+                                print(eeee,'not found..')
+                            try:
+                                ext_urls=results['results'][0]['data']['ext_urls']
+                            except Exception as eeee:
+                                print(eeee,'not found..')
+                            try:
+                                creator=results['results'][0]['data']['creator']
+                            except Exception as eeee:
+                                print(eeee,'not found..')
+                            try:
+                                source=results['results'][0]['data']['source']
+                            except Exception as eeee:
+                                print(eeee,'not found..')
 
-                else:
-                    print('miss... '+str(results['results'][0]['header']['similarity']), 'trying another pic..')
-                    logger.addPost(media, 'not_art', config.log_file)
-                    return media,tweetxt,'not_art'
+                    else:
+                        print('miss... '+str(results['results'][0]['header']['similarity']), 'trying another pic..')
+                        logger.addPost(media, 'not_art', config.log_file)
+                        return media,tweetxt,'not_art'
+                except TypeError as eeee:
+                    print(eeee)
+                    return media,'','????'
                 
             else:
                 print('no results... ;_;')
@@ -154,25 +151,25 @@ class Tweet():
                 return media,tweetxt,'not_art'
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
-                print('Out of searches for today. Sleeping for 1 hour...')
-                time.sleep(1*60*60)
+                print('[saucenao searches limit exceeded]')
+                return media,'[saucenao searches limit exceeded]','art'
             if int(results['header']['short_remaining'])<1:
                 print('out of searches for this 30 second period. sleeping for 25 seconds...')
-                time.sleep(25)
+                sleep(25)
                         
         if pixiv_id != 0:
              tweetxt = str(title) + ' by ' + str(member_name) + ' http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id)
-             return media,tweetxt,artornot
+             return media,tweetxt,'art'
         if part != 0:
             ext_url = ext_urls[0]
             tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_url)
-            return media,tweetxt,artornot
+            return media,tweetxt,'art'
         if ext_urls != '':
             ext_url = ext_urls[0] #just use first provided link
             tweetxt = str(source) + ' by ' + str(creator) + ' ' + ext_url
-            return media,tweetxt,artornot
+            return media,tweetxt,'art'
         else:
-            return media,tweetxt,artornot
+            return media,tweetxt,'art'
 
 
 def tweet(tweet_media, tweet_text, reply_id, api):
