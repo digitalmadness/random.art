@@ -9,7 +9,6 @@
 """
 
 import config
-import logger
 import os
 import random
 from glob import glob
@@ -45,21 +44,23 @@ class Tweet():
         api_key_saucenao = config.api_key_saucenao
         media_list = glob(folder + "*")
         media = random.choice(media_list)
-        extensions = {".jpg", ".jpeg", ".png", ".gif"}
+        print('\nopened',media)
+        if int(os.path.getsize(media)) < 100000:
+            print('less than 100kb, trying another file..')
+            return media,tweetxt,'low_quality'
         thumbSize = (150,150)
-
         image = Image.open(media)
         image.thumbnail(thumbSize, Image.ANTIALIAS)
         imageData = io.BytesIO()
         image.save(imageData,format='PNG')
         url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+api_key_saucenao
-        print(url)
         files = {'file': ("image.png", imageData.getvalue())}
         imageData.close()
                         
         processResults = True
         while True:
             try:
+                print('sending it to',url)
                 r = requests.post(url, files=files, timeout=60)
             except Exception as eeee:
                 print(eeee)
@@ -80,7 +81,7 @@ class Tweet():
                 results = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
                 if int(results['header']['user_id'])>0:
                     #api responded
-                    print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
+                    print('\nremaining saucenao.com api searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
                     if int(results['header']['status'])==0:
                         #search succeeded for all indexes, results usable
                         break
@@ -138,16 +139,14 @@ class Tweet():
                                 print(eeee,'not found..')
 
                     else:
-                        print('miss... '+str(results['results'][0]['header']['similarity']), 'trying another pic..')
-                        logger.addPost(media, 'not_art', config.log_file)
+                        print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
                         return media,tweetxt,'not_art'
                 except TypeError as eeee:
                     print(eeee)
-                    return media,'','????'
+                    return media,tweetxt,'search_crashed'
                 
             else:
                 print('no results... ;_;')
-                logger.addPost(media, 'not_art', config.log_file)
                 return media,tweetxt,'not_art'
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
@@ -178,6 +177,7 @@ def tweet(tweet_media, tweet_text, reply_id, api):
         filename=tweet_media,
         status=tweet_text,
         in_reply_to_status_id=reply_id)
+    print('\ntweet sent!')
 
 
 def is_already_tweeted(log_file, image, tolerance):

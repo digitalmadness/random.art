@@ -16,15 +16,17 @@ def post_tweet(text, reply_id, test=False):
     """sending tweet"""
     api = config.api
     tweet = status.Tweet()
-    media,tweetxt,artornot = tweet.media(config.source_folder)
+    media,tweetxt,media_state = tweet.media(config.source_folder)
     log = config.log_file
     tolerance = config.tolerance
     already_tweeted = status.is_already_tweeted(log, media, tolerance)
-    if already_tweeted or artornot == 'notart':
+    if already_tweeted or media_state == 'notart' or media_state == 'low_quality':
+        if media_state != 'low_quality':
+            logger.addPost(media, media_state, config.log_file)
         return post_tweet(text, reply_id)  # just try again
     if not test:
         status.tweet(media, tweetxt, reply_id, api)
-        logger.addPost(media, artornot, config.log_file)
+        logger.addPost(media, media_state, config.log_file)
     if test:
         logger.addPost(media, "TEST", log)
 
@@ -56,7 +58,7 @@ def main():
                 logger.addWarning(warning, config.log_file)
             except Exception as e:
                 print(e)
-                print ('something fucked up, restarting bot in 60 seconds..\n\nif this happens too often pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
+                print ('something fucked up, restarting bot in 60 seconds..\n\nif this happens right after start pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
                 sleep(60)
                 main()
             if forceTweet:
