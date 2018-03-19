@@ -3,7 +3,6 @@ this script searches tweets with desired hashtag, likes them(optional) and follo
 
 import tweepy
 from random import randint # +146% to sneaking from twatter bot policy
-from pyfiglet import Figlet
 from time import sleep # +1000% to sneaking
 from sys import argv
 import argparse
@@ -12,8 +11,6 @@ import config
 def main():
     '''runs autofollow addon'''
     unfollow_arg = argument_parser(argv[1:]).u
-    y = Figlet(font='slant')
-    print(y.renderText("""autofollow.py"""),'\n\nlogging in..') #print welcome message
     global api
     api = config.api
     me = api.me()

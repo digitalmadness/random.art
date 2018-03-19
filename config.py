@@ -10,7 +10,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 # read configs from file
 config = configparser.ConfigParser()
-config.readfp(codecs.open('settings.txt','r',encoding='utf8'))
+config.readfp(codecs.open('__settings.txt','r',encoding='utf8'))
 try:
 	twitter_config = config['Twitter']
 	api_key = twitter_config['api_key']

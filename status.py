@@ -19,7 +19,6 @@ import json
 import codecs
 from time import sleep
 from collections import OrderedDict
-from pyfiglet import Figlet
 
 """handles statuses from bot, reverse searches pics and
 makes sure it doesn't post anything repeated or pics not found on saucenao (specify how much pics before repeat in config)"""
@@ -197,8 +196,6 @@ def is_already_tweeted(log_file, image, tolerance):
 
 def welcome():
     """startup message"""
-    y = Figlet(font='slant')
-    print(y.renderText("""random art v3"""))
     print('logging in..\n')
     api = config.api
     myid = api.me()
