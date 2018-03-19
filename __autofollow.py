@@ -82,7 +82,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             with open(config.autofollow_log_file, 'r') as log_file: #check users whom we followed every time
                 already_followed_array = [line.rstrip('\n') for line in log_file]
             for element in already_followed_array:
-                if element == twit.user.id:
+                if int(element) == twit.user.id:
                     already_followed_state = True #user was already followed once by script
             for element in followers_array:
                 if element == twit.user.id:
@@ -90,11 +90,11 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             if is_following_us_state and not followback_opt:
                 print('this user already follows us, skipping..')
             else:
-                if twit.user.following:
-                    print('already following this user..')
+                if already_followed_state:
+                    print('already followed this user once..')
                 else:
-                    if already_followed_state:
-                        print('already followed once, skipping..')
+                    if twit.user.following:
+                        print('already following this user(not by script)..')
                     else:
                         twit.user.follow()
                         following_now_counter = following_now_counter + 1
