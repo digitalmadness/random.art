@@ -2,9 +2,9 @@
 this script searches tweets with desired hashtag, likes them(optional) and follows author '''
 
 import tweepy
-from random import randint
+from random import randint # +146% to sneaking from twatter bot policy
 from pyfiglet import Figlet
-from time import sleep
+from time import sleep # +1000% to sneaking
 import config
 
 def main():
@@ -36,7 +36,7 @@ def main():
         print('\nfollow those who already follows you option enabled!')
 
     while following_counter < int(config.custom_following_limit): #respecc user set limit
-        stop_code = follow(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+        stop_code,following_now_counter = follow(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
         if stop_code == 'custom_following_limit_hit':
             break
         elif stop_code == 'following_hardlimit_hit':
@@ -44,7 +44,7 @@ def main():
                 print('unfollowing subroutine disabled! this script cant follow more people')
                 break
             else:
-                unfollow(following_array,followers_array,int(config.custom_unfollowing_limit))
+                unfollow(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
         elif stop_code == 'restart':
             stop_code = follow(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
 
@@ -55,22 +55,22 @@ def main():
 def follow(followers_array, following_counter, search_phrase, custom_following_limit, followback_opt, like_opt):
     '''finds tweets and follows author (and likes tweet if set)'''
     print('\nstarting following subroutine..')
-    following_counter_updated = following_counter
+    following_now_counter = 0
     for twit in tweepy.Cursor(api.search, q=search_phrase).items():
-        if following_counter_updated >= custom_following_limit:
+        if following_counter >= custom_following_limit:
                 print('\ncustom following limit hit! stopping following subroutine...')
-                return 'custom_following_limit_hit'
+                return 'custom_following_limit_hit',0
         sleep_time = randint(1,5)
         sleep_time_long = randint(10,15)
-        if following_counter_updated >= randint(4400,4500):
-            if following_counter_updated >= len(followers_array) - randint(700,800):
+        if following_counter >= randint(4700,4990):
+            if following_counter >= len(followers_array) - randint(10,300):
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time_long,'seconds before next step to avoid detection..\n')
                 sleep(sleep_time_long)
-                return 'following_hardlimit_hit'
+                return 'following_hardlimit_hit',following_now_counter
             if len(followers_array) <= 5000:
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time_long,'seconds before next step to avoid detection..\n')
                 sleep(sleep_time_long)
-                return 'following_hardlimit_hit'
+                return 'following_hardlimit_hit',following_now_counter
         try:
             is_following_us_state = False
             already_followed_state = False
@@ -93,8 +93,9 @@ def follow(followers_array, following_counter, search_phrase, custom_following_l
                         print('already followed once, skipping..')
                     else:
                         twit.user.follow()
-                        following_counter_updated = following_counter_updated + 1
-                        print('followed this user, now following:',following_counter_updated,'\nsleeping',sleep_time,'sec to avoid detection..') # global following count
+                        following_now_counter = following_now_counter + 1
+                        following_counter = following_counter + 1
+                        print('followed this user, total following:',following_counter,'followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..') # global following count
                         if like_opt == True:
                             twit.favorite()
                             print('liked this tweet')
@@ -107,15 +108,15 @@ def follow(followers_array, following_counter, search_phrase, custom_following_l
             if '161' in str(e.reason):
                 print('\ncode 161 detected! you probably ran out of daily following limit\n\nTWITTER REJECTED FOLLOW\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 10 hours before next try..')
                 sleep(10*60*60)
-                return 'restart'
+                return 'restart',0
 
         except StopIteration:
             print('\nwe searched all tweets, sleeping for 10 minutes before next try..')
             sleep(600)
-            return 'restart'    
+            return 'restart',0
 
 
-def unfollow(following_array,followers_array,custom_unfollowing_limit):
+def unfollow(following_array,followers_array,custom_unfollowing_limit,following_now_counter):
     '''unfollows non mutuals (followed by this script only!!) from oldest to newest'''
     print('\nstarting unfollowing subroutine..\nno worries, it will unfollow only non mutuals followed by this script\n')
     unfollowed_count = 0
@@ -134,7 +135,7 @@ def unfollow(following_array,followers_array,custom_unfollowing_limit):
         unfollowed_count = unfollowed_count + 1
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..')
         sleep(sleep_time)
-        if unfollowed_count > randint(custom_unfollowing_limit - 100, custom_unfollowing_limit + 100): #randomize to avoid detection
+        if unfollowed_count > randint(custom_unfollowing_limit - 100, custom_unfollowing_limit) or unfollowed_count >= len(unfollowing_candidates) - following_now_counter:
             sleep_time_long = randint(60*60, 5*60*60)
             print('\nunfollowing subroutine stopped',unfollowing_count,'users was unfollowed\nsleeping',sleep_time_long,'before another following to avoid detection..\n')
             sleep(sleep_time_long)
