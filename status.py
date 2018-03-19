@@ -45,8 +45,8 @@ class Tweet():
         media_list = glob(folder + "*")
         media = random.choice(media_list)
         print('\nopened',media)
-        if int(os.path.getsize(media)) < 100000:
-            print('less than 100kb, trying another file..')
+        if int(os.path.getsize(media)) < int(config.discard_size) * 1000:
+            print('pic is less than',config.discard_size,'KB, trying another file..')
             return media,tweetxt,'low_quality'
         thumbSize = (150,150)
         image = Image.open(media)
