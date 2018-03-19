@@ -20,7 +20,7 @@ def post_tweet(text, reply_id, test=False):
     log = config.log_file
     tolerance = config.tolerance
     already_tweeted = status.is_already_tweeted(log, media, tolerance)
-    if already_tweeted or media_state == 'notart' or media_state == 'low_quality':
+    if already_tweeted or media_state == 'not_art' or media_state == 'low_quality':
         if media_state != 'low_quality':
             logger.addPost(media, media_state, config.log_file)
         return post_tweet(text, reply_id)  # just try again

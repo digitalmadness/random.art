@@ -64,14 +64,14 @@ class Tweet():
                 r = requests.post(url, files=files, timeout=60)
             except Exception as eeee:
                 print(eeee)
-                return media,'[saucenao.com api not avalivable]','na'
+                return media,'','api_na'
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
                     print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
                     sleep(60*60*24)
                 elif r.status_code == 429:
                     print('saucenao.com api requests limit exceeded!')
-                    return media,'[saucenao.com api requests limit exceeded]','na'
+                    return media,'','api_exceeded'
                 else:
                     print('saucenao.com api unknown error! status code: '+str(r.status_code))
             else:
