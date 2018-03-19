@@ -5,10 +5,13 @@ import tweepy
 from random import randint # +146% to sneaking from twatter bot policy
 from pyfiglet import Figlet
 from time import sleep # +1000% to sneaking
+from sys import argv
+import argparse
 import config
 
 def main():
     '''runs autofollow addon'''
+    unfollow_arg = argument_parser(argv[1:]).u
     y = Figlet(font='slant')
     print(y.renderText("""autofollow.py"""),'\n\nlogging in..') #print welcome message
     global api
@@ -30,29 +33,32 @@ def main():
     following_counter = len(following_array)
 
     print('\nwelcome, @' + me.screen_name + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array),'\n\nsearching for tweets with',config.search_phrase,'and following author')
-    if config.like_opt == True:
+    if config.like_opt:
         print('\nlike every found tweet option enabled!')
-    if config.followback_opt == True:
+    if config.followback_opt:
         print('\nfollow those who already follows you option enabled!')
 
     while following_counter < int(config.custom_following_limit): #respecc user set limit
-        stop_code,following_now_counter = follow(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+        stop_code = ''
+        following_now_counter = 0
+        if not unfollow_arg:
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
         if stop_code == 'custom_following_limit_hit':
             break
-        elif stop_code == 'following_hardlimit_hit':
-            if bool(config.unfollow_opt) == False:
-                print('unfollowing subroutine disabled! this script cant follow more people')
+        if unfollow_arg or stop_code == 'following_hardlimit_hit':
+            if not bool(config.unfollow_opt):
+                print('unfollowing subroutine disabled in settings! this script cant follow more people')
                 break
             else:
-                unfollow(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
-        elif stop_code == 'restart':
-            stop_code = follow(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+                unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
+        if stop_code == 'restart':
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
 
     print('\nmission completion! this script will close in 5 sec..')
     sleep(5)
 
 
-def follow(followers_array, following_counter, search_phrase, custom_following_limit, followback_opt, like_opt):
+def follow_subroutine(followers_array, following_counter, search_phrase, custom_following_limit, followback_opt, like_opt):
     '''finds tweets and follows author (and likes tweet if set)'''
     print('\nstarting following subroutine..')
     following_now_counter = 0
@@ -83,7 +89,7 @@ def follow(followers_array, following_counter, search_phrase, custom_following_l
             for element in followers_array:
                 if element == twit.user.id:
                     is_following_us_state = True #user is already following us, no need to waste daily limit
-            if is_following_us_state == True and followback_opt != True:
+            if is_following_us_state and not followback_opt:
                 print('this user already follows us, skipping..')
             else:
                 if twit.user.following:
@@ -96,7 +102,7 @@ def follow(followers_array, following_counter, search_phrase, custom_following_l
                         following_now_counter = following_now_counter + 1
                         following_counter = following_counter + 1
                         print('followed this user, total following:',following_counter,'followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..') # global following count
-                        if like_opt == True:
+                        if like_opt:
                             twit.favorite()
                             print('liked this tweet')
                         with open(config.autofollow_log_file, 'a') as log_file:
@@ -116,7 +122,7 @@ def follow(followers_array, following_counter, search_phrase, custom_following_l
             return 'restart',0
 
 
-def unfollow(following_array,followers_array,custom_unfollowing_limit,following_now_counter):
+def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit,following_now_counter):
     '''unfollows non mutuals (followed by this script only!!) from oldest to newest'''
     print('\nstarting unfollowing subroutine..\nno worries, it will unfollow only non mutuals followed by this script\n')
     unfollowed_count = 0
@@ -124,9 +130,8 @@ def unfollow(following_array,followers_array,custom_unfollowing_limit,following_
     with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
         already_followed_array = [line.rstrip('\n') for line in log_file]
     for dood in reversed(following_array):
-        if not dood in reversed(followers_array):
-            if dood in map(int, already_followed_array):
-                unfollowing_candidates.append(dood)
+        if not dood in reversed(followers_array) and dood in map(int, already_followed_array):
+            unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow\n')
     for dood in unfollowing_candidates:
         sleep_time = randint(2,10)
@@ -140,6 +145,14 @@ def unfollow(following_array,followers_array,custom_unfollowing_limit,following_
             print('\nunfollowing subroutine stopped',unfollowing_count,'users was unfollowed\nsleeping',sleep_time_long,'before another following to avoid detection..\n')
             sleep(sleep_time_long)
             break
+
+
+def argument_parser(args):
+    """parsing arguments from command line"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u", help="start unfollow subroutine first",
+                        action="store_true")
+    return parser.parse_args(args)
 
 
 main()
