@@ -10,6 +10,7 @@ api_key_saucenao =
 [App]
 image_folder = C:/replace_with__path_to_pics_folder/
 execution_chance = 5
+discard_pic_if_less_than_x_kilobytes = 100
 time_between_tweets = 30
 allow_repeat_after = 9999
 log_file = C:/Users/Public/randomartlog.txt
@@ -17,5 +18,8 @@ log_file = C:/Users/Public/randomartlog.txt
 [Autofollow]
 search_phrase = #replace_with_hashtag
 custom_following_limit = 9999
-follow_those_who_already_follow_you = 
-like_all_found_tweets = 
+enable_unfollow = 1
+custom_unfollowing_limit = 1500
+follow_those_who_already_follow_you = 0
+like_all_found_tweets = 0
+autofollow_log_file = C:/Users/Public/randomart_autofollow_log.txt
