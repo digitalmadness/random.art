@@ -4,7 +4,7 @@
 | it also recognizes screens/gifs from anime with timecode!           |
 |                                                                     |
 | setup on windows:                                                   |
-| 1)download last release https://github.com/exife/random.art/releases|
+|1)download last release https://github.com/exife/random.art/releases |
 |   and extract it to any folder                                      |
 | 2)enter twitter api keys, path to folder with pics in settings.txt  |
 |   (howto get them: https://gist.github.com/clayadavis/5681622 )     |
