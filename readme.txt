@@ -6,16 +6,16 @@
 | setup on windows:                                                   |
 |1)download last release https://github.com/exife/random.art/releases |
 |   and extract it to any folder                                      |
-| 2)enter twitter api keys, path to folder with pics in settings.txt  |
+| 2)enter twitter api keys, path to folder with pics in __settings.txt|
 |   (howto get them: https://gist.github.com/clayadavis/5681622 )     |
 | 3)enter api key from https://saucenao.com/user.php?page=search-api  |
-|   in settings.txt (register there to get the key)                   |
-| 4)customize chance of tweeting and frequency in settings.txt        |
-| 5)run with randomart.exe                                            |
-| 6)optionally run autofollow.bat for marketing purposes              |
+|   in __settings.txt (register there to get the key)                 |
+| 4)customize chance of tweeting and frequency in __settings.txt      |
+| 5)run with __randomart.exe                                          |
+| 6)optionally run __autofollow.exe for marketing purposes            |
 |                                                                     |
 | setup on other OS:                                                  |
-| 1)install python 3 and pip then                                     |
+| 1)install python 3 and pip download source code and unpack anywhere |
 |   type 'pip install pillow requests tweepy' in terminal             |
 | 2)enter twitter api keys, path to folder with pics in settings.txt  |
 |   howto get them: https://gist.github.com/clayadavis/5681622        |
