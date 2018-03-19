@@ -35,21 +35,22 @@ def main():
     if config.followback_opt:
         print('\nfollow those who already follows you option enabled!')
 
-    while following_counter < int(config.custom_following_limit): #respecc user set limit
-        stop_code = ''
-        following_now_counter = 0
-        if not unfollow_arg:
-            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
-        if stop_code == 'custom_following_limit_hit':
-            break
-        if unfollow_arg or stop_code == 'following_hardlimit_hit':
-            if not bool(config.unfollow_opt):
-                print('unfollowing subroutine disabled in settings! this script cant follow more people')
-                break
-            else:
-                unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
-        if stop_code == 'restart':
-            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+    if following_counter < int(config.custom_following_limit): #respecc user set limit
+        while True:
+                stop_code = 'normal'
+                following_now_counter = 1
+                if not unfollow_arg:
+                    stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+                if stop_code == 'custom_following_limit_hit':
+                    break
+                if unfollow_arg or stop_code == 'following_hardlimit_hit':
+                    if not bool(config.unfollow_opt):
+                        print('unfollowing subroutine disabled in settings! this script cant follow more people')
+                        break
+                    else:
+                        unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
+                if stop_code == 'restart':
+                    stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
 
     print('\nmission completion! this script will close in 5 sec..')
     sleep(5)
@@ -62,7 +63,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
     for twit in tweepy.Cursor(api.search, q=search_phrase).items():
         if following_counter >= custom_following_limit:
                 print('\ncustom following limit hit! stopping following subroutine...')
-                return 'custom_following_limit_hit',0
+                return 'custom_following_limit_hit', following_now_counter
         sleep_time = randint(1,5)
         sleep_time_long = randint(10,15)
         if following_counter >= randint(4700,4990):
@@ -111,12 +112,13 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             if '161' in str(e.reason):
                 print('\ncode 161 detected! you probably ran out of daily following limit\n\nTWITTER REJECTED FOLLOW\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 10 hours before next try..')
                 sleep(10*60*60)
-                return 'restart',0
+                return 'restart', following_now_counter
 
         except StopIteration:
             print('\nwe searched all tweets, sleeping for 10 minutes before next try..')
             sleep(600)
-            return 'restart',0
+            return 'restart', following_now_counter
+    return 'restart', following_now_counter
 
 
 def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit,following_now_counter):
@@ -132,10 +134,10 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
     print(len(unfollowing_candidates),'candidates for unfollow\n')
     for dood in unfollowing_candidates:
         sleep_time = randint(2,10)
-        print('user id',dood, 'was followed by this script but didnt followed you back')
+        print('user',dood, 'followed by this script but didnt followed you back')
         api.destroy_friendship(id=dood)
         unfollowed_count = unfollowed_count + 1
-        print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..')
+        print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
         if unfollowed_count > randint(custom_unfollowing_limit - 100, custom_unfollowing_limit) or unfollowed_count >= len(unfollowing_candidates) - following_now_counter:
             sleep_time_long = randint(60*60, 5*60*60)
