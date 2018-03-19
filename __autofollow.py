@@ -35,22 +35,21 @@ def main():
     if config.followback_opt:
         print('\nfollow those who already follows you option enabled!')
 
-    if following_counter < int(config.custom_following_limit): #respecc user set limit
-        while True:
-                stop_code = 'normal'
-                following_now_counter = 1
-                if not unfollow_arg:
-                    stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
-                if stop_code == 'custom_following_limit_hit':
-                    break
-                if unfollow_arg or stop_code == 'following_hardlimit_hit':
-                    if not bool(config.unfollow_opt):
-                        print('unfollowing subroutine disabled in settings! this script cant follow more people')
-                        break
-                    else:
-                        unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
-                if stop_code == 'restart':
-                    stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+    while True:
+        stop_code = 'normal'
+        following_now_counter = 1
+        if not unfollow_arg:
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
+        if stop_code == 'custom_following_limit_hit':
+            break
+        if unfollow_arg or stop_code == 'following_hardlimit_hit':
+            if not bool(config.unfollow_opt):
+                print('unfollowing subroutine disabled in settings! this script cant follow more people')
+                break
+            else:
+                unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
+        if stop_code == 'restart':
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt))
 
     print('\nmission completion! this script will close in 5 sec..')
     sleep(5)
@@ -110,7 +109,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
         except tweepy.TweepError as e:
             print('\ntweepy error!\n' + e.reason)
             if '161' in str(e.reason):
-                print('\ncode 161 detected! you probably ran out of daily following limit\n\nTWITTER REJECTED FOLLOW\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 10 hours before next try..')
+                print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 10 hours before next try..')
                 sleep(10*60*60)
                 return 'restart', following_now_counter
 
@@ -118,6 +117,8 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             print('\nwe searched all tweets, sleeping for 10 minutes before next try..')
             sleep(600)
             return 'restart', following_now_counter
+    print('something happened, sleeping 600 seconds before next try')
+    sleep(600)
     return 'restart', following_now_counter
 
 
