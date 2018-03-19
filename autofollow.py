@@ -20,8 +20,13 @@ def main():
     following_array = []
     for page in tweepy.Cursor(api.friends_ids, id=me.id).pages():
         following_array.extend(page)
-    with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
+    try:
+        with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
             already_followed_array = [line.rstrip('\n') for line in log_file]
+    except FileNotFoundError:
+        with open(config.autofollow_log_file, 'w') as log_file: #create log if not found
+            log_file.write('')
+        already_followed_array = []
     following_counter = len(following_array)
 
     print('\nwelcome, @' + me.screen_name + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array),'\n\nsearching for tweets with',config.search_phrase,'and following author')
