@@ -11,6 +11,7 @@ import config
 def main():
     '''runs autofollow addon'''
     unfollow_arg = argument_parser(argv[1:]).u
+    print('logging in..')
     global api
     api = config.api
     me = api.me()
@@ -64,32 +65,24 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                 print('\ncustom following limit hit! stopping following subroutine...')
                 return 'custom_following_limit_hit', following_now_counter
         sleep_time = randint(1,5)
-        sleep_time_long = randint(10,15)
         if following_counter >= randint(4700,4990):
             if following_counter >= len(followers_array) - randint(10,300):
-                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time_long,'seconds before next step to avoid detection..\n')
-                sleep(sleep_time_long)
+                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'seconds before next step to avoid detection..\n')
+                sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
             if len(followers_array) <= 5000:
-                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time_long,'seconds before next step to avoid detection..\n')
-                sleep(sleep_time_long)
+                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'seconds before next step to avoid detection..\n')
+                sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
         try:
-            is_following_us_state = False
-            already_followed_state = False
-            print('\nfound tweet by @' + twit.user.screen_name)
-            with open(config.autofollow_log_file, 'r') as log_file: #check users whom we followed every time
+            userid = twit.user.id
+            print('\nfound tweet by user id',userid)
+            with open(config.autofollow_log_file, 'r') as log_file: #check users whom we followed
                 already_followed_array = [line.rstrip('\n') for line in log_file]
-            for element in already_followed_array:
-                if int(element) == twit.user.id:
-                    already_followed_state = True #user was already followed once by script
-            for element in followers_array:
-                if element == twit.user.id:
-                    is_following_us_state = True #user is already following us, no need to waste daily limit
-            if is_following_us_state and not followback_opt:
+            if userid in followers_array and not followback_opt:
                 print('this user already follows us, skipping..')
             else:
-                if already_followed_state:
+                if str(userid) in already_followed_array:
                     print('already followed this user once..')
                 else:
                     if twit.user.following:
@@ -103,22 +96,20 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                             twit.favorite()
                             print('liked this tweet')
                         with open(config.autofollow_log_file, 'a') as log_file:
-                            log_file.write(str(twit.user.id) + '\n') #log ids for future checks
-                        sleep(sleep_time)
-    
+                            log_file.write(str(userid) + '\n') #log ids for future checks
+                        sleep(sleep_time)    
         except tweepy.TweepError as e:
             print('\ntweepy error!\n' + e.reason)
             if '161' in str(e.reason):
                 print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\nwaiting 10 hours before next try..')
                 sleep(10*60*60)
                 return 'restart', following_now_counter
-
         except StopIteration:
-            print('\nwe searched all tweets, sleeping for 10 minutes before next try..')
+            print('\nwe searched all tweets, sleeping 10 minutes before next try..')
             sleep(600)
             return 'restart', following_now_counter
-    print('something happened, sleeping 600 seconds before next try')
-    sleep(600)
+    print('following subroutine crashed for some reason, restarting in',sleep_time,'seconds')
+    sleep(sleep_time)
     return 'restart', following_now_counter
 
 
@@ -130,12 +121,12 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
     with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
         already_followed_array = [line.rstrip('\n') for line in log_file]
     for dood in reversed(following_array):
-        if not dood in reversed(followers_array) and dood in map(int, already_followed_array):
+        if not dood in followers_array and str(dood) in already_followed_array:
             unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow\n')
     for dood in unfollowing_candidates:
         sleep_time = randint(2,10)
-        print('user',dood, 'followed by this script but didnt followed you back')
+        print('user id ',dood, 'followed by this script but didnt followed you back')
         api.destroy_friendship(id=dood)
         unfollowed_count = unfollowed_count + 1
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
