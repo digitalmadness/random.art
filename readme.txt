@@ -8,7 +8,7 @@
 | (1)type in terminal:                                                |
 |    git clone https://github.com/exife/random.art                    |
 |    sudo apt-get update && sudo apt-get install python3 python3-pip  |
-|    sudo pip3 install pillow requests tweepy                         |
+|    sudo pip3 install pillow requests tweepy pyfiglet                |
 | (2)enter twitter api keys, path to folder with pics in settings.txt |
 |    (howto get them: https://gist.github.com/clayadavis/5681622 )    |
 | (3)enter api key from https://saucenao.com/user.php?page=search-api |
@@ -25,7 +25,7 @@
 | (optional) run autofollow.py for marketing purposes                 |
 |                                                                     |
 | setup on windows:                                                   |
-| 1)download and extract latest release to any folder:                |
+| 1)download and extract latest compiled release to any folder:       |
 |   github.com/exife/random.art/releases/download/4.0.4/randomart.zip |
 | 2)enter twitter api keys, path to folder with pics in __settings.txt|
 |   (howto get them: https://gist.github.com/clayadavis/5681622 )     |
