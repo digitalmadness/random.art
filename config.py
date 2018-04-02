@@ -46,10 +46,12 @@ except:
 	custom_following_limit = 999999
 	custom_unfollowing_limit = 999999
 try:
+	neural_opt = int(app_config['enable_neural_network'])
 	unfollow_opt = int(autofollow_config['enable_unfollow'])
 	followback_opt = int(autofollow_config['follow_those_who_already_follow_you'])
 	like_opt = int(autofollow_config['like_all_found_tweets'])
 except:
+	neural_opt = app_config['enable_neural_network']
 	unfollow_opt = autofollow_config['enable_unfollow']
 	followback_opt = autofollow_config['follow_those_who_already_follow_you']
 	like_opt = autofollow_config['like_all_found_tweets']

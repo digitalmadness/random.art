@@ -9,6 +9,7 @@
 """
 
 import config
+import moeflow
 import os
 import random
 from glob import glob
@@ -40,19 +41,30 @@ class Tweet():
         ext_url = ''
         est_time = ''
         minsim='70!'
-        api_key_saucenao = config.api_key_saucenao
+        tolerance = -1 * (config.tolerance)
         media_list = glob(folder + "*")
         media = random.choice(media_list)
+        
         print('\nopened',media)
+        try:
+            already_tweeted = open(config.log_file, 'r').readlines()[tolerance:]
+        except IndexError:
+            already_tweeted = open(config.log_file, 'r').readlines()
+        for element in already_tweeted:
+            if element.split('\t')[1] == media:
+                print('pic was already tweeted, trying another file..')
+                return media,tweetxt,'old',''
         if int(os.path.getsize(media)) < int(config.discard_size) * 1000:
             print('pic is less than',config.discard_size,'KB, trying another file..')
-            return media,tweetxt,'low_quality'
+            return media,tweetxt,'low_quality',''
+        if bool(config.neural_opt):
+            prediction = moeflow.neuralnetwork(media)
         thumbSize = (150,150)
         image = Image.open(media)
         image.thumbnail(thumbSize, Image.ANTIALIAS)
         imageData = io.BytesIO()
         image.save(imageData,format='PNG')
-        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+api_key_saucenao
+        url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+config.api_key_saucenao
         files = {'file': ("image.png", imageData.getvalue())}
         imageData.close()
                         
@@ -63,14 +75,14 @@ class Tweet():
                 r = requests.post(url, files=files, timeout=60)
             except Exception as eeee:
                 print(eeee)
-                return media,'','api_na'
+                return media,'','api_na',''
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
                     print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
                     sleep(60*60*24)
                 elif r.status_code == 429:
                     print('saucenao.com api requests limit exceeded!')
-                    return media,'','api_exceeded'
+                    return media,'','api_exceeded',''
                 else:
                     print('saucenao.com api unknown error! status code: '+str(r.status_code))
             else:
@@ -139,59 +151,49 @@ class Tweet():
 
                     else:
                         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-                        return media,tweetxt,'not_art'
+                        return media,tweetxt,'not_art',''
                 except TypeError as eeee:
                     print(eeee)
-                    return media,tweetxt,'search_crashed'
+                    return media,tweetxt,'search_crashed',prediction
                 
             else:
                 print('no results... ;_;')
-                return media,tweetxt,'not_art'
+                return media,tweetxt,'not_art',''
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('[saucenao searches limit exceeded]')
-                return media,'[saucenao searches limit exceeded]','art'
+                return media,tweetxt,'art',prediction
             if int(results['header']['short_remaining'])<1:
                 print('out of searches for this 30 second period. sleeping for 25 seconds...')
                 sleep(25)
                         
         if pixiv_id != 0:
-             tweetxt = str(title) + ' by ' + str(member_name) + ' http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id)
-             return media,tweetxt,'art'
+             tweetxt = str(title) + ' by ' + str(member_name) + '\n[http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
+             return media,tweetxt,'art',prediction
         if part != 0:
             ext_url = ext_urls[0]
-            tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + ' ' + str(ext_url)
-            return media,tweetxt,'art'
+            tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + '\n[' + ext_url + ']'
+            return media,tweetxt,'art',prediction
         if ext_urls != '':
-            ext_url = ext_urls[0] #just use first provided link
-            tweetxt = str(source) + ' by ' + str(creator) + ' ' + ext_url
-            return media,tweetxt,'art'
+            ext_url = ext_urls[0] # using first provided link
+            if creator == '':
+                if source !='':
+                    tweetxt = str(source) + '\n[' + ext_url + ']'
+                    return media,tweetxt,'art',prediction
+                tweetxt = ext_url
+                return media,tweetxt,'art',prediction
+            tweetxt = str(source) + ' by ' + str(creator) + '\n[' + ext_url + ']'
+            return media,tweetxt,'art',prediction
         else:
-            return media,tweetxt,'art'
+            return media,tweetxt,'art',prediction
 
 
-def tweet(tweet_media, tweet_text, reply_id, api):
+def tweet(tweet_media, tweet_text, api):
     """sends tweet command to Tweepy"""
     api.update_with_media(
         filename=tweet_media,
-        status=tweet_text,
-        in_reply_to_status_id=reply_id)
+        status=tweet_text)
     print('\ntweet sent!')
-
-
-def is_already_tweeted(log_file, image, tolerance):
-    """checks if pic is already tweeted"""
-    tolerance = -1 * (tolerance)
-    if not os.path.isfile(log_file):
-        # if the file doesn't exist just don't bother
-        return False
-    try:
-        already_tweeted = open(log_file, 'r').readlines()[tolerance:]
-    except IndexError:
-        already_tweeted = open(log_file, 'r').readlines()
-    for element in already_tweeted:
-        if element.split('\t')[1] == image:
-            return True
 
 
 def welcome():

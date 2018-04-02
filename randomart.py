@@ -12,20 +12,21 @@ from time import sleep
 calls the logger and parses the CLI arguments"""
 
 
-def post_tweet(text, reply_id, test=False):
+def post_tweet(test=False):
     """sending tweet"""
     api = config.api
     tweet = status.Tweet()
-    media,tweetxt,media_state = tweet.media(config.source_folder)
+    media,tweetxt,media_state,prediction = tweet.media(config.source_folder)
     log = config.log_file
     tolerance = config.tolerance
-    already_tweeted = status.is_already_tweeted(log, media, tolerance)
-    if already_tweeted or media_state == 'not_art' or media_state == 'low_quality':
-        if media_state != 'low_quality':
+    if media_state == 'old' or media_state == 'not_art' or media_state == 'low_quality':
+        if media_state == 'not_art':
             logger.addPost(media, media_state, config.log_file)
-        return post_tweet(text, reply_id)  # just try again
+        return post_tweet()  # just try again
+    if prediction[1] > 0.8:
+        tweetxt = tweetxt + '\ncharacter: ' + str(prediction[0])
     if not test:
-        status.tweet(media, tweetxt, reply_id, api)
+        status.tweet(media, tweetxt, api)
         logger.addPost(media, media_state, config.log_file)
     if test:
         logger.addPost(media, "TEST", log)
@@ -52,7 +53,7 @@ def main():
     while True:
         if random.randint(0, 99) < config.chance or test or forceTweet:
             try:
-                post_tweet(None, None, test)
+                post_tweet(test)
             except RuntimeError:
                 warning = "!CRITICAL! no non-repeated images found"
                 logger.addWarning(warning, config.log_file)
