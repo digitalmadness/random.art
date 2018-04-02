@@ -21,7 +21,6 @@ def neuralnetwork(filename):
     print("MoeFlow model initialized")
 
     with tempfile.NamedTemporaryFile(mode="wb", suffix='.jpg') as input_jpg:
-        results = []
         # Run face detection with animeface-2009
         detected_faces = run_face_detection(filename)
         # This operation will rewrite detected faces to 96 x 96 px
@@ -36,11 +35,10 @@ def neuralnetwork(filename):
                 graph
                 )
             face_name = uuid.uuid4().hex + ".jpg"
-            results.append({
-                "image_name": face_name,
-                "prediction": predictions
-            })
-            print(predictions)
+            if __name__ == "__main__":
+                print('\nfound 2d girl!\n',predictions[0],'\n')
+            else:
+                return predictions[0]
 
 
 def resize_faces(image_files, width=96, height=96):
