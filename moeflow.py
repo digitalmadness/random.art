@@ -41,8 +41,6 @@ def neuralnetwork(filename):
                 "prediction": predictions
             })
             print(predictions)
-            return(predictions)
-        print(results)
 
 
 def resize_faces(image_files, width=96, height=96):
