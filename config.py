@@ -10,7 +10,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 # read configs from file
 config = configparser.ConfigParser()
-config.readfp(codecs.open('__settings.txt','r',encoding='utf8'))
+config.readfp(codecs.open('settings.txt','r',encoding='utf8'))
 try:
 	twitter_config = config['Twitter']
 	api_key = twitter_config['api_key']
@@ -21,7 +21,7 @@ except:
 	exit('error reading twitter api keys from settings.txt! make sure you filled it corrrectly')
 app_config = config['App']
 source_folder = app_config['image_folder']
-if source_folder == 'C:/replace_with__path_to_pics_folder/':
+if source_folder == '/replace/with/path_to_pics_folder/':
 	exit('you forgot to replace default pictures folder in settings.txt!')
 discard_size = app_config['discard_pic_if_less_than_x_kilobytes']
 log_file = app_config['log_file']
