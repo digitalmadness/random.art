@@ -24,16 +24,17 @@ def post_tweet():
         if media_state == 'not_art':
             logger.addPost(media, media_state, config.log_file)
         return post_tweet()  # just try again
-    for waifu in predictions:
-        print(waifu[0],waifu[1])
-        accuracy = waifu[1]
-        if accuracy > 0.75:
-            while charactersnotadded:
-                tweetxt = tweetxt + '\nwaifus recognized:'
-                charactersnotadded = False
-            tweetxt = tweetxt + ' ' + waifu[0] + ' (' + str(int(accuracy*100)) + '%)'
-        #else:
-            #return post_tweet() #DEBUG
+    if bool(config.neural_opt):
+        for waifu in predictions:
+            print(waifu[0],waifu[1])
+            accuracy = waifu[1]
+            if accuracy > 0.75:
+                while charactersnotadded:
+                    tweetxt = tweetxt + '\nwaifus recognized:'
+                    charactersnotadded = False
+                tweetxt = tweetxt + ' ' + waifu[0] + ' (' + str(int(accuracy*100)) + '%)'
+            #else:
+                #return post_tweet() #DEBUG
     status.tweet(media, tweetxt, api)
     logger.addPost(media, media_state, config.log_file)
 
