@@ -1,6 +1,3 @@
-'''
-this script searches tweets with desired hashtag, likes them(optional) and follows author '''
-
 import tweepy
 from random import randint # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
@@ -8,6 +5,9 @@ from sys import argv
 from pyfiglet import Figlet
 import argparse
 import config
+
+''' this script searches tweets with desired hashtag, likes them(optional) and follows author '''
+
 
 def main():
     '''runs autofollow addon'''
@@ -67,13 +67,13 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                 print('\ncustom following limit hit! stopping following subroutine...')
                 return 'custom_following_limit_hit', following_now_counter
         sleep_time = randint(1,5)
-        if following_counter >= randint(4700,4990):
-            if following_counter >= len(followers_array) - randint(10,300):
-                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'seconds before next step to avoid detection..\n')
+        if following_counter >= randint(4888,4999):
+            if following_counter >= len(followers_array) - randint(1,111):
+                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
             if len(followers_array) <= 5000:
-                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'seconds before next step to avoid detection..\n')
+                print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
         try:
@@ -110,7 +110,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             print('\nwe searched all tweets, sleeping 10 minutes before next try..')
             sleep(600)
             return 'restart', following_now_counter
-    print('following subroutine crashed for some reason, restarting in',sleep_time,'seconds')
+    print('following subroutine crashed for some reason, restarting in',sleep_time,'sec')
     sleep(sleep_time)
     return 'restart', following_now_counter
 
@@ -134,8 +134,8 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
         if unfollowed_count > randint(custom_unfollowing_limit - 100, custom_unfollowing_limit) or unfollowed_count >= len(unfollowing_candidates) - following_now_counter:
-            sleep_time_long = randint(60*60, 5*60*60)
-            print('\nunfollowing subroutine stopped',unfollowing_count,'users was unfollowed\nsleeping',sleep_time_long,'before another following to avoid detection..\n')
+            sleep_time_long = randint(30*60, 120*60)
+            print('\nunfollowing subroutine stopped',unfollowing_count,'users was unfollowed\nsleeping',sleep_time_long,' sec before another following cycle to avoid detection..\n')
             sleep(sleep_time_long)
             break
 
@@ -148,4 +148,5 @@ def argument_parser(args):
     return parser.parse_args(args)
 
 
-main()
+if __name__ == "__main__":
+    main()
