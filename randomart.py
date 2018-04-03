@@ -12,33 +12,34 @@ from time import sleep
 calls the logger and parses the CLI arguments"""
 
 
-def post_tweet(test=False):
+def post_tweet():
     """sending tweet"""
+    charactersnotadded = True
     api = config.api
     tweet = status.Tweet()
-    media,tweetxt,media_state,prediction = tweet.media(config.source_folder)
+    media,tweetxt,media_state,predictions = tweet.media(config.source_folder)
     log = config.log_file
     tolerance = config.tolerance
     if media_state == 'old' or media_state == 'not_art' or media_state == 'low_quality':
         if media_state == 'not_art':
             logger.addPost(media, media_state, config.log_file)
         return post_tweet()  # just try again
-    print(prediction[0],prediction[1])
-    if prediction[1] > 0.7:
-        tweetxt = tweetxt + '\ncharacter: ' + str(prediction[0])
-    if not test:
-        status.tweet(media, tweetxt, api)
-        logger.addPost(media, media_state, config.log_file)
-    if test:
-        logger.addPost(media, "TEST", log)
+    for waifu in predictions:
+        print(waifu[0],waifu[1])
+        accuracy = waifu[1]
+        if accuracy > 0.7:
+            while charactersnotadded:
+                tweetxt = tweetxt + '\nwaifus recognized:'
+                charactersnotadded = False
+            tweetxt = tweetxt + ' ' + waifu[0] + ' (' + str(int(accuracy*100)) + '%)'
+    status.tweet(media, tweetxt, api)
+    logger.addPost(media, media_state, config.log_file)
 
 
 def parse_args(args):
     """parsing arguments from command line"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tweet", help="Ignores execution chance, always run",
-                        action="store_true")
-    parser.add_argument("--test", help="Wont't tweet, just write to log",
+    parser.add_argument("-t", help="Ignores execution chance, always run",
                         action="store_true")
     return parser.parse_args(args)
 
@@ -49,12 +50,11 @@ def main():
     api = config.api
     status.welcome()
     args = parse_args(sys.argv[1:])
-    test = args.test
-    forceTweet = args.tweet
+    forceTweet = args.t
     while True:
-        if random.randint(0, 99) < config.chance or test or forceTweet:
+        if random.randint(0, 99) < config.chance or forceTweet:
             try:
-                post_tweet(test)
+                post_tweet()
             except RuntimeError:
                 warning = "!CRITICAL! no non-repeated images found"
                 logger.addWarning(warning, config.log_file)

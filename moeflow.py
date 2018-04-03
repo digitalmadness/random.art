@@ -12,6 +12,7 @@ from config import source_folder
 
 
 def neuralnetwork(filename):
+    results = []
     label_lines = [line.strip() for line in tf.gfile.GFile("face_labels.txt")]
     graph = tf.Graph()
     graph_def = tf.GraphDef()
@@ -36,10 +37,11 @@ def neuralnetwork(filename):
                 graph
                 )
             face_name = uuid.uuid4().hex + ".jpg"
+            results.append(predictions[0])
             if __name__ == "__main__":
                 print('\nfound 2d girl!\n',predictions[0],'\n')
             else:
-                return predictions[0]
+                return results
 
 
 def resize_faces(image_files, width=96, height=96):

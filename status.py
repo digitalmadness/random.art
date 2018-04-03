@@ -59,7 +59,8 @@ class Tweet():
             print('pic is less than',config.discard_size,'KB, trying another file..')
             return media,tweetxt,'low_quality',''
         if bool(config.neural_opt):
-            prediction = moeflow.neuralnetwork(media)
+            characters = moeflow.neuralnetwork(media)
+
         thumbSize = (150,150)
         image = Image.open(media)
         image.thumbnail(thumbSize, Image.ANTIALIAS)
@@ -155,7 +156,7 @@ class Tweet():
                         return media,tweetxt,'not_art',''
                 except TypeError as eeee:
                     print(eeee)
-                    return media,tweetxt,'search_crashed',prediction
+                    return media,tweetxt,'search_crashed',characters
                 
             else:
                 print('no results... ;_;')
@@ -163,30 +164,30 @@ class Tweet():
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('[saucenao searches limit exceeded]')
-                return media,tweetxt,'art',prediction
+                return media,tweetxt,'art',characters
             if int(results['header']['short_remaining'])<1:
                 print('out of searches for this 30 second period. sleeping for 25 seconds...')
                 sleep(25)
                         
         if pixiv_id != 0:
              tweetxt = str(title) + ' by ' + str(member_name) + '\n[http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
-             return media,tweetxt,'art',prediction
+             return media,tweetxt,'art',characters
         if part != 0:
             ext_url = ext_urls[0]
             tweetxt = str(source) + ' ep ' + str(part) + ' ' + str(est_time) + '\n[' + ext_url + ']'
-            return media,tweetxt,'art',prediction
+            return media,tweetxt,'art',characters
         if ext_urls != '':
             ext_url = ext_urls[0] # using first provided link
             if creator == '':
                 if source !='':
                     tweetxt = str(source) + '\n[' + ext_url + ']'
-                    return media,tweetxt,'art',prediction
+                    return media,tweetxt,'art',characters
                 tweetxt = ext_url
-                return media,tweetxt,'art',prediction
+                return media,tweetxt,'art',characters
             tweetxt = str(source) + ' by ' + str(creator) + '\n[' + ext_url + ']'
-            return media,tweetxt,'art',prediction
+            return media,tweetxt,'art',characters
         else:
-            return media,tweetxt,'art',prediction
+            return media,tweetxt,'art',characters
 
 
 def tweet(tweet_media, tweet_text, api):
