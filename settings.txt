@@ -23,4 +23,4 @@ enable_unfollow = 1
 custom_unfollowing_limit = 999
 follow_those_who_already_follow_you = 0
 like_all_found_tweets = 0
-autofollow_log_file = randomart_autofollow_log.txt
+autofollow_log_file = autofollow_log.txt
