@@ -4,6 +4,7 @@ import tensorflow as tf
 import uuid
 import argparse
 from random import choice
+from pyfiglet import Figlet
 from glob import glob
 from classify import classify_resized_face
 from face_detect import run_face_detection
@@ -53,6 +54,8 @@ def resize_faces(image_files, width=96, height=96):
 
 
 if __name__ == "__main__":
+    fi = Figlet(font='slant')
+    print(fi.renderText("""moeflow""")) #print welcome message
     waifu = choice(glob(source_folder + "*"))
     print('recognizing characters in',waifu)
     neuralnetwork(waifu)

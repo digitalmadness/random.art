@@ -20,6 +20,7 @@ import json
 import codecs
 from time import sleep
 from collections import OrderedDict
+from pyfiglet import Figlet
 
 """handles statuses from bot, reverse searches pics and
 makes sure it doesn't post anything repeated or pics not found on saucenao (specify how much pics before repeat in config)"""
@@ -198,9 +199,11 @@ def tweet(tweet_media, tweet_text, api):
 
 def welcome():
     """startup message"""
-    print('logging in..\n')
+    fi = Figlet(font='slant')
+    print(fi.renderText("""random.art.v4.2"""),'\nlogging in..\n')
     api = config.api
     myid = api.me()
     print('welcome, @' + myid.screen_name + '!\n')
     path, dirs, files = os.walk(config.source_folder).__next__()
     print('tweeting',str(len(files)),'pictures from', config.source_folder, 'every', str(config.interval), 'seconds with', str(config.chance), '% chance..\n')
+

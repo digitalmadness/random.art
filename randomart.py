@@ -23,7 +23,8 @@ def post_tweet(test=False):
         if media_state == 'not_art':
             logger.addPost(media, media_state, config.log_file)
         return post_tweet()  # just try again
-    if prediction[1] > 0.8:
+    print(prediction[0],prediction[1])
+    if prediction[1] > 0.7:
         tweetxt = tweetxt + '\ncharacter: ' + str(prediction[0])
     if not test:
         status.tweet(media, tweetxt, api)

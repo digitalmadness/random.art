@@ -5,13 +5,15 @@ import tweepy
 from random import randint # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
 from sys import argv
+from pyfiglet import Figlet
 import argparse
 import config
 
 def main():
     '''runs autofollow addon'''
     unfollow_arg = argument_parser(argv[1:]).u
-    print('logging in..')
+    fi = Figlet(font='slant')
+    print(fi.renderText("""autofollow"""),'\n\nlogging in..') #print welcome message
     global api
     api = config.api
     me = api.me()
