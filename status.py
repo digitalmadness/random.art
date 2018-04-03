@@ -58,13 +58,13 @@ def media(folder,gif_arg):
     if bool(config.neural_opt) and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions = moeflow.neuralnetwork(media)
         #if you uncomment everything here its basically gif mode
-        if len(predictions) <= 1: #debug
-            return media,'','low_quality','' #debug
-        for waifu in predictions: #debug
-            print(waifu[0],waifu[1]) #debug
-            accuracy = waifu[1] #debug
-            if accuracy < 0.77: #debug
-                return media,'','low_quality','' #debug
+        #if len(predictions) <= 1: #debug
+        #    return media,'','low_quality','' #debug
+        #for waifu in predictions: #debug
+        #    print(waifu[0],waifu[1]) #debug
+        #    accuracy = waifu[1] #debug
+        #    if accuracy < 0.77: #debug
+        #        return media,'','low_quality','' #debug
 
     """compress pic and upload it to saucenao.com"""
     thumbSize = (150,150)
