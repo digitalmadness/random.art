@@ -40,8 +40,8 @@ def neuralnetwork(filename):
             results.append(predictions[0])
             if __name__ == "__main__":
                 print('\nfound 2d girl!\n',predictions[0],'\n')
-            else:
-                return results
+        
+        return results
 
 
 def resize_faces(image_files, width=96, height=96):
