@@ -45,10 +45,10 @@ class Tweet(): #why this even exists you ask? it was here since 2015 and im stil
         for element in already_tweeted:
             if element.split('\t')[1] == media:
                 print('pic was already tweeted, trying another file..')
-                return '','','old',''
+                return media,'','old',''
         if int(os.path.getsize(media)) < int(config.discard_size) * 1000:
             print('pic is less than',config.discard_size,'KB, trying another file..')
-            return '','','low_quality',''
+            return media,'','low_quality',''
         if bool(config.neural_opt):
             characters = moeflow.neuralnetwork(media)
         """compress pic and upload it to saucenao.com"""
@@ -68,14 +68,14 @@ class Tweet(): #why this even exists you ask? it was here since 2015 and im stil
                 r = requests.post(url, files=files, timeout=60)
             except Exception as eeee:
                 print(eeee)
-                return '','','api_na',''
+                return media,'','api_na',''
             if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
                 if r.status_code == 403:
                     print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
                     sleep(60*60*24)
                 elif r.status_code == 429:
                     print('saucenao.com api requests limit exceeded!')
-                    return '','','api_exceeded',''
+                    return media,'','api_exceeded',''
                 else:
                     print('saucenao.com api unknown error! status code: '+str(r.status_code))
             else:
@@ -142,14 +142,14 @@ class Tweet(): #why this even exists you ask? it was here since 2015 and im stil
 
                     else:
                         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-                        return '','','not_art',''
+                        return media,'','not_art',''
                 except TypeError as eeee:
                     print(eeee)
                     return media,tweetxt,'search_crashed',characters
                 
             else:
                 print('no results... ;_;')
-                return '','','not_art',''
+                return media,'','not_art',''
 
             if int(results['header']['long_remaining'])<1: #could potentially be negative
                 print('[saucenao searches limit exceeded]')
