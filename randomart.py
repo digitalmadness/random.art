@@ -1,10 +1,11 @@
 import config
 import status
 import logger
-import random
-import argparse
-import sys
+from random import randint
+from argparse import ArgumentParser
+from sys import argv
 from time import sleep
+from re import sub
 
 """uses all other modules to post tweets if chance is met calls logger and parses arguments"""
 
@@ -14,13 +15,13 @@ def main():
     global api  #it's used absolutely everywhere so might as well be global
     api = config.api
     status.welcome()
-    args = parse_args(sys.argv[1:])
+    args = parse_args(argv[1:])
     if args.g:
         gif_arg = args.g
     else:
         gif_arg = False
     while True:
-        if random.randint(0, 99) < config.chance or args.t or gif_arg:
+        if randint(0, 99) < config.chance or args.t or gif_arg:
             try:
                 post_tweet(gif_arg)
             except Exception as eeee:
@@ -36,40 +37,50 @@ def main():
 
 
 def post_tweet(gif_arg):
-    """sending tweet"""
+    """check media state and send tweet"""
+    characters = []
+    copyright = []
     api = config.api
-    media,tweetxt,media_state,predictions = status.media(config.source_folder,gif_arg)
+    media,tweetxt,media_state,predictions,faces_detected,danbooru_id = status.media(config.source_folder, gif_arg)
     log = config.log_file
     tolerance = config.tolerance
-    if media_state == 'old' or media_state == 'not_art' or media_state == 'low_quality':
+    if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
             logger.addPost(media, media_state, config.log_file)
         return post_tweet(gif_arg)  # just try again
-    if bool(config.neural_opt):
+    if danbooru_id != 0:
+            post = status.danbooru(danbooru_id)
+            characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()]
+            characters = ['{0}'.format(tag.replace("_", " ")) for tag in characters]
+            copyright = ['{0}'.format(tag.replace("_", " ")) for tag in post['tag_string_copyright'].split()]
+    if bool(config.neural_opt) and faces_detected:
         if len(predictions) == 1:
-            tweetxt = tweetxt + '\nface recognized'
-        elif len(predictions) > 1:
-            tweetxt = tweetxt + '\n' + str(len(predictions)) + ' faces recognized'
-        for waifu in predictions:
-            print(waifu[0],waifu[1])
-            accuracy = waifu[1]
-            if accuracy > 0.77:
-                tweetxt = tweetxt + ': ' + waifu[0] + ' (' + str(int(accuracy*100)) + '%) '
-        if tweetxt.endswith('%) '):
-            tweetxt = tweetxt + 'via neural network'
+                tweetxt += '\nface recognized'
+        elif len(predictions) > 1 and len(predictions) == len(characters):
+            tweetxt += '\n' + str(len(predictions)) + ' faces recognized'
         else:
-            pass #placeholder for danbooru tags recognition
+            tweetxt += '\nfaces recognized'
+        if characters != []:
+            tweetxt += ': ' + ", ".join(characters)
+            for waifu in predictions:
+                if waifu[1] > 0.77:
+                    tweetxt += ': ' + waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
+    else:
+        if characters != [] and len(characters) == 1:
+            tweetxt += '\ncharacter: ' + ", ".join(characters)
+        elif characters != [] and len(characters) > 1:
+            tweetxt += '\ncharacters: ' + ", ".join(characters)
+    if copyright != []:
+        tweetxt += '\nfrom: ' + copyright[0]
     status.tweet(media, tweetxt, api)
     logger.addPost(media, media_state, config.log_file)
 
 
 def parse_args(args):
     """parsing arguments from command line"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-t", help="manual tweet",
-                        action="store_true")
-    parser.add_argument("-g", help="manual tweet GIF",
-                        action="store_true")
+    parser = ArgumentParser()
+    parser.add_argument("-t", help="manual tweet", action="store_true")
+    parser.add_argument("-g", help="manual tweet GIF", action="store_true")
     return parser.parse_args(args)
 
 

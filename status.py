@@ -1,44 +1,48 @@
+try:
+    import moeflow
+except Exception as eeee:
+    print(eeee)
 import config
-import moeflow
-import os
-import random
+from os import path,walk
+from requests import post
+from json import JSONDecoder,dumps
+from io import BytesIO
+from random import choice
 from glob import glob
-import io
-import requests
 from PIL import Image
-import json
-import codecs
 from time import sleep
 from collections import OrderedDict
 from pyfiglet import Figlet
+from pybooru import Danbooru,Moebooru
+
 
 """handles statuses from bot, neural network, reverse searches pics and makes sure it doesn't post anything repeated or not found on saucenao"""
 
 
 def media(folder,gif_arg):
     """set vars and pick random image from folder"""
+    faces_detected = False
     media = ''
     service_name = ''
     part = 0
     creator = ''
-    source = ''
     pixiv_id = 0
+    danbooru_id = 0
     member_name = ''
     title = ''
     tweetxt = ''
-    ext_urls = ''
-    ext_url = ''
+    ext_urls = []
     est_time = ''
-    minsim='77!'
+    minsim=77
     predictions = []
     tolerance = -1 * (config.tolerance)
     media_list = glob(folder + "*")
     if gif_arg:
         while not media.lower().endswith(('gif')):
-            media = random.choice(media_list)
+            media = choice(media_list)
     else:
         while not media.lower().endswith(('.png', '.jpg', '.jpeg','gif')):
-            media = random.choice(media_list)
+            media = choice(media_list)
     print('\nopened',media)
 
     """run some checks"""
@@ -49,143 +53,135 @@ def media(folder,gif_arg):
     for element in already_tweeted:
         if element.split('\t')[1] == media:
             print('pic was already tweeted, trying another file..')
-            return media,'','old',''
-    if int(os.path.getsize(media)) < int(config.discard_size) * 1000:
+            return '','','retry','',False,0
+    if int(path.getsize(media)) < int(config.discard_size) * 1000:
         print('pic is less than',config.discard_size,'KB, trying another file..')
-        return media,'','low_quality',''
+        return '','','retry','',False,0
 
-    """run reural network"""
+    """run neural network"""
     if bool(config.neural_opt) and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
-        predictions = moeflow.neuralnetwork(media)
-        #if you uncomment everything here its basically gif mode
+        predictions,faces_detected = moeflow.neuralnetwork(media)
+        #if not faces_detected: #debug
+        #    return '','','retry','',False,0 #debug
         #if len(predictions) <= 1: #debug
-        #    return media,'','low_quality','' #debug
+        #    return '','','retry','',False,0 #debug
         #for waifu in predictions: #debug
-        #    print(waifu[0],waifu[1]) #debug
-        #    accuracy = waifu[1] #debug
-        #    if accuracy < 0.77: #debug
-        #        return media,'','low_quality','' #debug
+        #    if waifu[1] < 0.77: #debug
+        #        return '','','retry','',False,0 #debug
 
     """compress pic and upload it to saucenao.com"""
     thumbSize = (150,150)
     image = Image.open(media)
     image.thumbnail(thumbSize, Image.ANTIALIAS)
-    imageData = io.BytesIO()
+    imageData = BytesIO()
     image.save(imageData,format='PNG')
-    url = 'http://saucenao.com/search.php?output_type=2&numres=1&minsim='+minsim+'&db=999&api_key='+config.api_key_saucenao
     files = {'file': ("image.png", imageData.getvalue())}
-    imageData.close()       
-    processResults = True
-    while True:
-        try:
-            print('\nsending pic to',url)
-            r = requests.post(url, files=files, timeout=60)
-        except Exception as eeee:
-            print(eeee)
-            return media,'','api_na',''
-        if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
-            if r.status_code == 403:
-                print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
-                sleep(60*60*24)
-            elif r.status_code == 429:
-                print('saucenao.com api requests limit exceeded!')
-                return media,'','api_exceeded',''
-            else:
-                print('saucenao.com api unknown error! status code: '+str(r.status_code))
+    imageData.close()
+    print('\nsending pic to saucenao.com')
+    try:
+        r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
+    except Exception as eeee:
+        print(eeee)
+        return media,'','api_na','',faces_detected,0
+    if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
+        if r.status_code == 403:
+            print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
+            sleep(60*60*24)
+        elif r.status_code == 429:
+            print('saucenao.com api requests limit exceeded!')
+            return media,'','api_key_error','',faces_detected,0
         else:
-            #with open('last.saucenao.response.json', 'w') as f: #debug
-            #    f.write(r.text) #debug
+            print('saucenao.com api unknown error! status code: '+str(r.status_code))
+    else:
+        #with open('last_saucenao_response.txt', 'w') as f: #debug
+        #    f.write(r.text) #debug
 
-            """analyze saucenao.com response"""  
-            results = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
-            if int(results['header']['user_id'])>0:
-                #api responded
-                print('\nremaining saucenao.com api searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
-                if int(results['header']['status'])==0:
-                    #search succeeded for all indexes, results usable
-                    break
-                else:
-                    if int(results['header']['status'])>0:
-                        break
-                    else:
-                        print('problem with search as submitted, bad image, or impossible request')
-                        processResults = False
-                        break
-            else:
-                #General issue, api did not respond. Normal site took over for this error state.
-                processResults = False
-                break
-
-    """check pic parameters in saucenao.com response"""       
-    if processResults:
-        if int(results['header']['results_returned']) > 0:
-            try :
-                if float(results['results'][0]['header']['similarity']) > float(results['header']['minimum_similarity']):
-                    print('hit! '+str(results['results'][0]['header']['similarity']))
-                    index_id = results['results'][0]['header']['index_id']
-                    if index_id == 5 or index_id == 6:
-                        pixiv_id=results['results'][0]['data']['pixiv_id']
-                        member_name=results['results'][0]['data']['member_name']
-                        title=results['results'][0]['data']['title']
-                    elif index_id == 21: 
-                        part=results['results'][0]['data']['part']
-                        est_time=results['results'][0]['data']['est_time']
-                        source=results['results'][0]['data']['source']
-                        ext_urls=results['results'][0]['data']['ext_urls']
-                    else:
-                        try:
-                            pixiv_id=results['results'][0]['data']['pixiv_id']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
-                            ext_urls=results['results'][0]['data']['ext_urls']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
-                            creator=results['results'][0]['data']['creator']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                        try:
-                            source=results['results'][0]['data']['source']
-                        except Exception as eeee:
-                            print(eeee,'not found..')
-                else:
-                    print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-                    return media,'','not_art',''
-            except TypeError as eeee:
-                print(eeee)
-                return media,tweetxt,'search_crashed',predictions
+        """analyze saucenao.com response"""
+        results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
+        if int(results['header']['user_id'])>0:
+            #api responded
+            print('\nremaining saucenao.com api searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
-            print('no results... ;_;')
-            return media,'','not_art',''
+            #General issue, api did not respond. Normal site took over for this error state.
+            return '','','retry','',False,0
 
-        if int(results['header']['long_remaining'])<1: #could potentially be negative
-                print('[saucenao searches limit exceeded]')
-                return media,tweetxt,'art',predictions
-        if int(results['header']['short_remaining'])<1:
+    """check pic parameters in saucenao.com response"""
+    if float(results['results'][0]['header']['similarity']) > minsim:
+        print('hit! '+str(results['results'][0]['header']['similarity']+' analyzing response..'))
+        index_id = results['results'][0]['header']['index_id']
+        if index_id == 21: 
+            part=results['results'][0]['data']['part']
+            est_time=results['results'][0]['data']['est_time']
+            source=results['results'][0]['data']['source']
+            ext_urls=results['results'][0]['data']['ext_urls']
+        else:
+            result = 0
+            while danbooru_id == 0 and  result < 10:
+                try:
+                    if float(results['results'][result]['header']['similarity']) > minsim:
+                        danbooru_id=results['results'][result]['data']['danbooru_id']
+                except Exception:
+                    pass
+                result += 1
+            if index_id == 5 or index_id == 6:
+                pixiv_id=results['results'][0]['data']['pixiv_id']
+                member_name=results['results'][0]['data']['member_name']
+                title=results['results'][0]['data']['title']
+            else:
+                result = 0
+                while pixiv_id == 0 and result < 10:
+                    try:
+                        if float(results['results'][result]['header']['similarity']) > minsim:
+                            pixiv_id=results['results'][result]['data']['pixiv_id']
+                    except Exception:
+                        pass
+                    result += 1
+                result = 0
+                while ext_urls == [] and result < 10:
+                    try:
+                        if float(results['results'][result]['header']['similarity']) > minsim:
+                            ext_urls=results['results'][result]['data']['ext_urls']
+                            try:
+                                creator = results['results'][result]['data']['ext_urls']
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    result += 1
+    else:
+        print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
+        return '','','retry','',False,0
+    if int(results['header']['long_remaining'])<1: #could potentially be negative
+            print('[saucenao searches limit exceeded]')
+            return media,tweetxt,'api_exceeded',predictions,faces_detected,0
+    if int(results['header']['short_remaining'])<1:
             print('out of searches for this 30 second period. sleeping for 25 seconds...')
             sleep(25)
+            return '','','retry','',False,0
 
     """generate tweet text based on that parameters"""
     if pixiv_id != 0:
          tweetxt = str(title) + ' by ' + str(member_name) + '\n[http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
-         return media,tweetxt,'art',predictions
-    if part != 0:
-        ext_url = ext_urls[0]
-        tweetxt = str(source) + '\nep. ' + str(part) + '| timecode: ' + str(est_time) + '\n[' + ext_url + ']'
-        return media,tweetxt,'art',predictions
-    if ext_urls != '':
-        ext_url = ext_urls[0] # using first provided link
-        if creator == '':
-            if source !='':
-                tweetxt = str(source) + '\n[' + ext_url + ']'
-                return media,tweetxt,'art',predictions
-            tweetxt = ext_url
-            return media,tweetxt,'art',predictions
-        tweetxt = str(source) + ' by ' + str(creator) + '\n[' + ext_url + ']'
-        return media,tweetxt,'art',predictions
-    else:
-        return media,tweetxt,'art',predictions
+    elif part != 0:
+        tweetxt = str(source) + '\nep. ' + str(part) + '| timecode: ' + str(est_time) + '\n[' + ext_urls[0] + ']'
+    elif ext_urls != []:
+        if creator != '':
+            tweetxt = 'by ' + str(creator) + '\n[' + ext_urls[0] + ']'
+        else:
+            tweetxt = '[' + ext_urls[0] + ']'
+    return media,tweetxt,'art',predictions,faces_detected,danbooru_id
+
+
+def danbooru(danbooru_id):
+    if danbooru_id != 0:
+        client = Danbooru('danbooru')
+        print('\nchecking details on danbooru.donmai.us')
+        try:
+            #with open('last_danbooru_response.txt', 'w') as f: #debug
+            #    f.write(dumps(client.post_show(danbooru_id)))  #debug
+            return client.post_show(danbooru_id)
+        except Exception as eeee:
+            print(eeee)
 
 
 def tweet(tweet_media, tweet_text, api):
@@ -199,9 +195,7 @@ def tweet(tweet_media, tweet_text, api):
 def welcome():
     """startup message"""
     fi = Figlet(font='slant')
-    print(fi.renderText("""randomartv4.2"""),'\nlogging in..\n')
+    print(fi.renderText("""randomartv5"""),'\nlogging in..\n')
     api = config.api
     myid = api.me()
-    print('welcome, @' + myid.screen_name + '!\n')
-    path, dirs, files = os.walk(config.source_folder).__next__()
-    print('tweeting',str(len(files)),'pictures from', config.source_folder, 'every', str(config.interval), 'seconds with', str(config.chance), '% chance..\n')
+    print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance, '% chance..')
