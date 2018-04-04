@@ -91,8 +91,8 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                         print('already following this user(not by script)..')
                     else:
                         twit.user.follow()
-                        following_now_counter = following_now_counter + 1
-                        following_counter = following_counter + 1
+                        following_now_counter += 1
+                        following_counter += 1
                         print('followed this user, total following:',following_counter,'followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..') # global following count
                         if like_opt:
                             twit.favorite()
@@ -130,7 +130,7 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
         sleep_time = randint(2,10)
         print('user id ',dood, 'followed by this script but didnt followed you back')
         api.destroy_friendship(id=dood)
-        unfollowed_count = unfollowed_count + 1
+        unfollowed_count += 1
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
         if unfollowed_count > randint(custom_unfollowing_limit - 100, custom_unfollowing_limit) or unfollowed_count >= len(unfollowing_candidates) - following_now_counter:
