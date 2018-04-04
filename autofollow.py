@@ -13,7 +13,7 @@ def main():
     '''runs autofollow addon'''
     unfollow_arg = argument_parser(argv[1:]).u
     fi = Figlet(font='slant')
-    print(fi.renderText("""autofollow"""),'\n\nlogging in..') #print welcome message
+    print(fi.renderText('''autofollow'''),'\n\nlogging in..') #print welcome message
     global api
     api = config.api
     me = api.me()
@@ -141,12 +141,12 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
 
 
 def argument_parser(args):
-    """parsing arguments from command line"""
+    '''parsing arguments from command line'''
     parser = argparse.ArgumentParser()
-    parser.add_argument("-u", help="start unfollow subroutine first",
-                        action="store_true")
+    parser.add_argument('-u', help='start unfollow subroutine first',
+                        action='store_true')
     return parser.parse_args(args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -7,11 +7,11 @@ from sys import argv
 from time import sleep
 from re import sub
 
-"""uses all other modules to post tweets if chance is met calls logger and parses arguments"""
+'''uses all other modules to post tweets if chance is met calls logger and parses arguments'''
 
 
 def main():
-    """runs the whole program"""
+    '''runs the whole program'''
     global api  #it's used absolutely everywhere so might as well be global
     api = config.api
     status.welcome()
@@ -37,7 +37,7 @@ def main():
 
 
 def post_tweet(gif_arg):
-    """check media state and send tweet"""
+    '''check media state and send tweet'''
     characters = []
     copyright = []
     api = config.api
@@ -49,40 +49,32 @@ def post_tweet(gif_arg):
             logger.addPost(media, media_state, config.log_file)
         return post_tweet(gif_arg)  # just try again
     if danbooru_id != 0:
-            post = status.danbooru(danbooru_id)
-            characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()]
-            characters = ['{0}'.format(tag.replace("_", " ")) for tag in characters]
-            copyright = ['{0}'.format(tag.replace("_", " ")) for tag in post['tag_string_copyright'].split()]
-    if bool(config.neural_opt) and faces_detected:
-        if len(predictions) == 1:
-                tweetxt += '\nface recognized'
-        elif len(predictions) > 1 and len(predictions) == len(characters):
-            tweetxt += '\n' + str(len(predictions)) + ' faces recognized'
-        else:
-            tweetxt += '\nfaces recognized'
-        if characters != []:
-            tweetxt += ': ' + ", ".join(characters)
-            for waifu in predictions:
-                if waifu[1] > 0.77:
-                    tweetxt += ': ' + waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
-    else:
-        if characters != [] and len(characters) == 1:
-            tweetxt += '\ncharacter: ' + ", ".join(characters)
-        elif characters != [] and len(characters) > 1:
-            tweetxt += '\ncharacters: ' + ", ".join(characters)
+        post = status.danbooru(danbooru_id)
+        characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()] #regex to remove everything in brackets
+        characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
+        copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
+    if characters != []:
+        tweetxt += '\n' + ', '.join(characters)
+    elif bool(config.neural_opt) and faces_detected:
+        waifus = ''
+        for waifu in predictions:
+            if waifu[1] > 0.77:
+                waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
+        if waifus != '':
+            tweetxt += '\n' + waifus
     if copyright != []:
-        tweetxt += '\nfrom: ' + copyright[0]
+        tweetxt += ' from ' + copyright[0]
     status.tweet(media, tweetxt, api)
     logger.addPost(media, media_state, config.log_file)
 
 
 def parse_args(args):
-    """parsing arguments from command line"""
+    '''parsing arguments from command line'''
     parser = ArgumentParser()
-    parser.add_argument("-t", help="manual tweet", action="store_true")
-    parser.add_argument("-g", help="manual tweet GIF", action="store_true")
+    parser.add_argument('-t', help='manual tweet', action='store_true')
+    parser.add_argument('-g', help='manual tweet GIF', action='store_true')
     return parser.parse_args(args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

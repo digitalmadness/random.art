@@ -13,16 +13,16 @@ from config import source_folder
 
 def neuralnetwork(filename):
     results = []
-    label_lines = [line.strip() for line in tf.gfile.GFile("face_labels.txt")]
+    label_lines = [line.strip() for line in tf.gfile.GFile('face_labels.txt')]
     graph = tf.Graph()
     graph_def = tf.GraphDef()
-    with tf.gfile.FastGFile("face_graph.pb", 'rb') as f:
+    with tf.gfile.FastGFile('face_graph.pb', 'rb') as f:
         graph_def.ParseFromString(f.read())
     with graph.as_default():
         tf.import_graph_def(graph_def, name='')
-    print("\nMoeFlow model initialized")
+    print('\nMoeFlow model initialized')
 
-    with tempfile.NamedTemporaryFile(mode="wb", suffix='.jpg') as input_jpg:
+    with tempfile.NamedTemporaryFile(mode='wb', suffix='.jpg') as input_jpg:
         faces_detected = True
         # Run face detection with animeface-2009
         detected_faces = run_face_detection(filename)
@@ -35,9 +35,9 @@ def neuralnetwork(filename):
             detected_faces = [filename]
         for face in detected_faces:
             predictions = classify_resized_face(face, label_lines, graph)
-            face_name = uuid.uuid4().hex + ".jpg"
+            face_name = uuid.uuid4().hex + '.jpg'
             results.append(predictions[0])
-            if __name__ == "__main__":
+            if __name__ == '__main__':
                 print('\nfound 2d girl!\n',predictions[0],'\n')
         
         return results,faces_detected
@@ -54,9 +54,9 @@ def resize_faces(image_files, width=96, height=96):
         cv2.imwrite(image_file, resized_image)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     fi = Figlet(font='slant')
-    print(fi.renderText("""moeflow""")) #print welcome message
-    waifu = choice(glob(source_folder + "*"))
+    print(fi.renderText('''moeflow''')) #print welcome message
+    waifu = choice(glob(source_folder + '*'))
     print('recognizing characters in',waifu)
     neuralnetwork(waifu)

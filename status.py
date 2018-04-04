@@ -16,11 +16,11 @@ from pyfiglet import Figlet
 from pybooru import Danbooru,Moebooru
 
 
-"""handles statuses from bot, neural network, reverse searches pics and makes sure it doesn't post anything repeated or not found on saucenao"""
+'''handles statuses from bot, neural network, reverse searches pics and makes sure it doesn't post anything repeated or not found on saucenao'''
 
 
 def media(folder,gif_arg):
-    """set vars and pick random image from folder"""
+    '''set vars and pick random image from folder'''
     faces_detected = False
     media = ''
     service_name = ''
@@ -36,7 +36,7 @@ def media(folder,gif_arg):
     minsim=77
     predictions = []
     tolerance = -1 * (config.tolerance)
-    media_list = glob(folder + "*")
+    media_list = glob(folder + '*')
     if gif_arg:
         while not media.lower().endswith(('gif')):
             media = choice(media_list)
@@ -45,7 +45,7 @@ def media(folder,gif_arg):
             media = choice(media_list)
     print('\nopened',media)
 
-    """run some checks"""
+    '''run some checks'''
     try:
         already_tweeted = open(config.log_file, 'r').readlines()[tolerance:]
     except IndexError:
@@ -58,7 +58,7 @@ def media(folder,gif_arg):
         print('pic is less than',config.discard_size,'KB, trying another file..')
         return '','','retry','',False,0
 
-    """run neural network"""
+    '''run neural network'''
     if bool(config.neural_opt) and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions,faces_detected = moeflow.neuralnetwork(media)
         #if not faces_detected: #debug
@@ -69,13 +69,13 @@ def media(folder,gif_arg):
         #    if waifu[1] < 0.77: #debug
         #        return '','','retry','',False,0 #debug
 
-    """compress pic and upload it to saucenao.com"""
+    '''compress pic and upload it to saucenao.com'''
     thumbSize = (150,150)
     image = Image.open(media)
     image.thumbnail(thumbSize, Image.ANTIALIAS)
     imageData = BytesIO()
     image.save(imageData,format='PNG')
-    files = {'file': ("image.png", imageData.getvalue())}
+    files = {'file': ('image.png', imageData.getvalue())}
     imageData.close()
     print('\nsending pic to saucenao.com')
     try:
@@ -96,7 +96,7 @@ def media(folder,gif_arg):
         #with open('last_saucenao_response.txt', 'w') as f: #debug
         #    f.write(r.text) #debug
 
-        """analyze saucenao.com response"""
+        '''analyze saucenao.com response'''
         results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
         if int(results['header']['user_id'])>0:
             #api responded
@@ -105,7 +105,7 @@ def media(folder,gif_arg):
             #General issue, api did not respond. Normal site took over for this error state.
             return '','','retry','',False,0
 
-    """check pic parameters in saucenao.com response"""
+    '''check pic parameters in saucenao.com response'''
     if float(results['results'][0]['header']['similarity']) > minsim:
         print('hit! '+str(results['results'][0]['header']['similarity']+' analyzing response..'))
         index_id = results['results'][0]['header']['index_id']
@@ -142,7 +142,7 @@ def media(folder,gif_arg):
                         if float(results['results'][result]['header']['similarity']) > minsim:
                             ext_urls=results['results'][result]['data']['ext_urls']
                             try:
-                                creator = results['results'][result]['data']['ext_urls']
+                                creator = results['results'][result]['data']['creator']
                             except Exception:
                                 pass
                     except Exception:
@@ -159,7 +159,7 @@ def media(folder,gif_arg):
             sleep(25)
             return '','','retry','',False,0
 
-    """generate tweet text based on that parameters"""
+    '''generate tweet text based on that parameters'''
     if pixiv_id != 0:
          tweetxt = str(title) + ' by ' + str(member_name) + '\n[http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
     elif part != 0:
@@ -185,7 +185,7 @@ def danbooru(danbooru_id):
 
 
 def tweet(tweet_media, tweet_text, api):
-    """sends tweet command to Tweepy"""
+    '''sends tweet command to Tweepy'''
     api.update_with_media(
         filename=tweet_media,
         status=tweet_text)
@@ -193,9 +193,9 @@ def tweet(tweet_media, tweet_text, api):
 
 
 def welcome():
-    """startup message"""
+    '''startup message'''
     fi = Figlet(font='slant')
-    print(fi.renderText("""randomartv5"""),'\nlogging in..\n')
+    print(fi.renderText('''randomartv5'''),'\nlogging in..\n')
     api = config.api
     myid = api.me()
     print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance, '% chance..')
