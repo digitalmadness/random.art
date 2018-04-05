@@ -11,15 +11,17 @@ dname = os.path.dirname(abspath)
 # read configs from file
 config = configparser.ConfigParser()
 config.readfp(codecs.open('settings.txt','r',encoding='utf8'))
+twitter_config = config['Twitter']
+saucenao_config = config['Saucenao']
+app_config = config['App']
+autofollow_config = config['Autofollow']
 try:
-	twitter_config = config['Twitter']
 	api_key = twitter_config['api_key']
 	secret_key = twitter_config['secret_key']
 	token = twitter_config['token']
 	secret_token = twitter_config['secret_token']
 except:
 	exit('error reading twitter api keys from settings.txt! make sure you filled it corrrectly')
-app_config = config['App']
 source_folder = app_config['image_folder']
 if source_folder == '/replace/with/path_to_pics_folder/':
 	exit('you forgot to replace default pictures folder in settings.txt!')
@@ -29,14 +31,14 @@ try:
 	tolerance = int(app_config['allow_repeat_after'])
 	chance = int(app_config['execution_chance'])
 	interval = int(app_config['time_between_tweets'])
+	min_followers = int(autofollow_config['minimum_followers_to_consider'])
 except:
-	print('only numbers are supported in tolerance, chance, interval fields in settings.txt!\nusing default..')
+	print('only numbers are supported in tolerance, chance, interval, min_followers fields in settings.txt!\nusing default..')
 	tolerance = 999
 	chance = 5
 	interval = 60
-saucenao_config = config['Saucenao']
+	min_followers = 500
 api_key_saucenao = saucenao_config['api_key_saucenao']
-autofollow_config = config['Autofollow']
 search_phrase = autofollow_config['search_phrase']
 try:
 	custom_following_limit = autofollow_config['custom_following_limit']	

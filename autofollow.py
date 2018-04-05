@@ -25,7 +25,7 @@ def main():
         following_array.extend(page)
     following_counter = len(following_array)
 
-    print('\nwelcome, @' + me.screen_name + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array),'\n\nsearching for tweets with',config.search_phrase,'and following author')
+    print('\nwelcome, @' + me.screen_name + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array),'\n\nsearching for tweets with',config.search_phrase,'and following authors with > ',config.min_followers,'followers')
     if config.like_opt:
         print('\nlike every found tweet option enabled!')
     if config.followback_opt:
@@ -88,7 +88,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                     else:
                         dood_followers_count = twit.user.followers_count
                         dood_following_count = twit.user.friends_count
-                        if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > 500:
+                        if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > config.min_followers:
                             twit.user.follow()
                             following_now_counter += 1
                             following_counter += 1  # real following counter
@@ -102,7 +102,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                                 print('.doesnt seems like mutual')
                             if dood_following_count > 2*dood_followers_count:
                                 print('.follows more than 2x his followers, obviously bot')
-                            if dood_followers_count < 500:
+                            if dood_followers_count < config.min_followers:
                                 print('.doesnt have enough followers')
                             sleep(0.5+random.random())
                         already_followed_array.append(userid)
