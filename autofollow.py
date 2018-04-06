@@ -55,8 +55,11 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
     '''finds tweets and follows author (and likes tweet if set)'''
     print('\nstarting following subroutine..')
     following_now_counter = 0
+    already_followed_array = []
     with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
-        already_followed_array = log_file.readlines()
+        for line in log_file:
+            if not int(line) in already_followed_array:
+                already_followed_array.append(int(line))
     for twit in tweepy.Cursor(api.search, q=search_phrase).items():
         if following_counter >= custom_following_limit:
                 print('\ncustom following limit hit! stopping following subroutine...')
@@ -76,15 +79,16 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             print('\nfound tweet by user id',userid)
             if userid in followers_array and not followback_opt:
                 print('this user already follows us..')
-                sleep(random.random())
             else:
-                if str(userid) in already_followed_array:
+                if userid in already_followed_array:
                     print('already tried to follow this user..')
                     sleep(random.random())
                 else:
                     if twit.user.following:
                         print('already following this user(not by script)..')
-                        sleep(random.random())
+                        already_followed_array.append(userid)
+                        with open(config.autofollow_log_file, 'a') as log_file:
+                            log_file.write(str(userid) + '\n')
                     else:
                         dood_followers_count = twit.user.followers_count
                         dood_following_count = twit.user.friends_count
@@ -127,16 +131,19 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
     '''unfollows non mutuals (followed by this script only!!) from oldest to newest'''
     print('\nstarting unfollowing subroutine..\nno worries, it will unfollow only non mutuals followed by this script\n')
     unfollowed_count = 0
+    already_followed_array = []
     unfollowing_candidates = []
     with open(config.autofollow_log_file, 'r') as log_file: #get array of users who we followed from log
-        already_followed_array = [line.rstrip('\n') for line in log_file]
+        for line in log_file:
+            if not int(line) in already_followed_array:
+                already_followed_array.append(int(line))
     for dood in reversed(following_array):
-        if not dood in followers_array and str(dood) in already_followed_array:
+        if not dood in reversed(followers_array) and dood in already_followed_array:
             unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow\n')
-    for dood in unfollowing_candidates:
+    for unfollowed_count,dood in enumerate(unfollowing_candidates):
         sleep_time = 1+10*random.random()
-        print('user id ',dood, 'followed by this script but didnt followed you back')
+        print('user id ',dood, '(followed by this script) didnt followed you back')
         api.destroy_friendship(id=dood)
         unfollowed_count += 1
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
