@@ -23,8 +23,6 @@ try:
 except:
 	exit('error reading twitter api keys from settings.txt! make sure you filled it corrrectly')
 source_folder = app_config['image_folder']
-if source_folder == '/replace/with/path_to_pics_folder/':
-	exit('you forgot to replace default pictures folder in settings.txt!')
 discard_size = app_config['discard_pic_if_less_than_x_kilobytes']
 log_file = app_config['log_file']
 try:

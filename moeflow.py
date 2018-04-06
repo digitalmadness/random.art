@@ -3,6 +3,7 @@ import tempfile
 import tensorflow as tf
 import uuid
 import argparse
+from sys import exit
 from random import choice
 from pyfiglet import Figlet
 from glob import glob
@@ -57,6 +58,8 @@ def resize_faces(image_files, width=96, height=96):
 if __name__ == '__main__':
     fi = Figlet(font='slant')
     print(fi.renderText('''moeflow''')) #print welcome message
+    if source_folder == '/replace/with/path_to_pics_folder/':
+        exit('you forgot to replace default pictures folder in settings.txt!')
     waifu = choice(glob(source_folder + '*'))
     print('recognizing characters in',waifu)
     neuralnetwork(waifu)

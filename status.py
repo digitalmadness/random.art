@@ -1,8 +1,9 @@
 try:
     import moeflow
 except Exception as eeee:
-    print(eeee)
+    print(eeee,'\nneural network is not configured!')
 import config
+from sys import exit
 from os import path,walk
 from requests import post
 from json import JSONDecoder,dumps
@@ -25,7 +26,6 @@ def media(folder,gif_arg):
     media = ''
     service_name = ''
     part = 0
-    creator = ''
     pixiv_id = 0
     danbooru_id = 0
     member_name = ''
@@ -141,10 +141,6 @@ def media(folder,gif_arg):
                     try:
                         if float(results['results'][result]['header']['similarity']) > minsim:
                             ext_urls=results['results'][result]['data']['ext_urls']
-                            try:
-                                creator = results['results'][result]['data']['creator']
-                            except Exception:
-                                pass
                     except Exception:
                         pass
                     result += 1
@@ -163,12 +159,9 @@ def media(folder,gif_arg):
     if pixiv_id != 0:
          tweetxt = str(title) + ' by ' + str(member_name) + '\n[http://www.pixiv.net/member_illust.php?mode=medium&illust_id=' + str(pixiv_id) + ']'
     elif part != 0:
-        tweetxt = str(source) + '\nep. ' + str(part) + '| timecode: ' + str(est_time) + '\n[' + ext_urls[0] + ']'
+        tweetxt = str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time) + '\n[' + ext_urls[0] + ']'
     elif ext_urls != []:
-        if creator != '':
-            tweetxt = 'by ' + str(creator) + '\n[' + ext_urls[0] + ']'
-        else:
-            tweetxt = '[' + ext_urls[0] + ']'
+        tweetxt = '[' + ext_urls[0] + ']'
     return media,tweetxt,'art',predictions,faces_detected,danbooru_id
 
 
@@ -196,6 +189,8 @@ def welcome():
     '''startup message'''
     fi = Figlet(font='slant')
     print(fi.renderText('''randomartv5'''),'\nlogging in..\n')
+    if config.source_folder == '/replace/with/path_to_pics_folder/':
+        exit('you forgot to replace default pictures folder in settings.txt!')
     api = config.api
     myid = api.me()
     print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance, '% chance..')
