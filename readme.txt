@@ -1,4 +1,6 @@
 |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣|
+| HEWWO (・`ω´・) I WIWW GUWIDE YOU THWOUGH INSTAWWATION PWOCESS      |
+|                                                                     |
 | this bot tweets random pictures from folder, checks if its art      |
 | and generates pixiv links if available (powered by saucenao.com)    |
 | or link to anime with timecode!                                     |
