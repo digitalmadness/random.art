@@ -20,6 +20,7 @@ log_file = randomart_log.txt
 search_phrase = #replace_with_hashtag
 minimum_followers_to_consider = 500
 custom_following_limit = 9999
+instant_follow_back = 0
 enable_unfollow = 1
 custom_unfollowing_limit = 999
 follow_those_who_already_follow_you = 0
