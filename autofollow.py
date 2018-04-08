@@ -65,7 +65,9 @@ class MyStreamListener(tweepy.StreamListener):
         userid = int(source.get('id'))
         screenname = str(source.get('screen_name'))
         username = '@'+screenname
-        if screenname != myname:
+        if status.event == 'follow' and userid in already_followed_array and screenname != myname:
+            print('\nincoming followback by',username)
+        elif screenname != myname:
             print('\nincoming',status.event,'by',username)
         if status.event == 'favorite' or status.event == 'favorited_retweet' and screenname != myname:
             if userid in following_array:
