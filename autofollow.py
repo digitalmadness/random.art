@@ -72,7 +72,6 @@ class MyStreamListener(tweepy.StreamListener):
                 print(username,'is already followed, trying to like his random tweet..')
                 tweets = []
                 for status2 in tweepy.Cursor(api.user_timeline,id=username).items():
-                        logger.save(status2,'temp.txt')
                         if not bool(status2.in_reply_to_screen_name):
                             try:
                                 status2.retweeted_status
