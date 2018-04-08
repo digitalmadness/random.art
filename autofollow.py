@@ -73,15 +73,18 @@ class MyStreamListener(tweepy.StreamListener):
                 tweets = []
                 for status2 in tweepy.Cursor(api.user_timeline,id=username).items():
                         logger.save(status2,'temp.txt')
-                        if not bool(status2.in_reply_to_screen_name) and status2.user.screen_name == screenname:
+                        if not bool(status2.in_reply_to_screen_name):
                             try:
-                                status2.favorite()
-                                print('success!')
-                                break
-                            except tweepy.TweepError as eeee:
-                                if not '139' in eeee.reason:
-                                    print(eeee.reason)
+                                status2.retweeted_status
+                            except AttributeError:
+                                try:
+                                    status2.favorite()
+                                    print('success!')
                                     break
+                                except tweepy.TweepError as eeee:
+                                    if not '139' in eeee.reason:
+                                        print(eeee.reason)
+                                        break
             elif screenname != myname:
                 api.create_friendship(userid)
                 print('followed',username)
