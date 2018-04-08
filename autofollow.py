@@ -69,9 +69,9 @@ class MyStreamListener(tweepy.StreamListener):
             print('\nincoming',status.event,'by',username)
         if status.event == 'favorite' or status.event == 'favorited_retweet' and screenname != myname:
             if userid in following_array:
-                print(username,'is already followed, trying to like his random tweet..')
+                print(username,'is already followed, trying to likeback..')
                 tweets = []
-                for status2 in tweepy.Cursor(api.user_timeline,id=username).items():
+                for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
                         if not bool(status2.in_reply_to_screen_name):
                             try:
                                 status2.retweeted_status
@@ -84,9 +84,17 @@ class MyStreamListener(tweepy.StreamListener):
                                     if not '139' in eeee.reason:
                                         print(eeee.reason)
                                         break
+                        if status2_count > 19:
+                            print('only retweets!')
+                            try:
+                                status2.favorite()
+                            except tweepy.TweepError:
+                                pass
+                            break
             elif screenname != myname:
                 api.create_friendship(userid)
                 print('followed',username)
+                following_array.append(userid)
                 logger.add_follow(userid)
         if status.event == 'follow':
             if not userid in following_array and screenname != myname:
