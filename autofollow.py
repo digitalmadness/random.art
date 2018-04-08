@@ -71,8 +71,11 @@ class MyStreamListener(tweepy.StreamListener):
             if userid in following_array:
                 print(username,'is already followed, trying to likeback..')
                 tweets = []
+                status2_first = False
                 for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
                         if not bool(status2.in_reply_to_screen_name):
+                            if not status2_first:
+                                status2_first = status2
                             try:
                                 status2.retweeted_status
                             except AttributeError:
@@ -87,17 +90,18 @@ class MyStreamListener(tweepy.StreamListener):
                         if status2_count > 19:
                             print('only retweets!')
                             try:
-                                status2.favorite()
+                                status2_first.favorite()
+                                print('liked first retweet anyway')
                             except tweepy.TweepError:
                                 pass
                             break
-            elif screenname != myname:
+            elif not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followed',username)
                 following_array.append(userid)
                 logger.add_follow(userid)
-        if status.event == 'follow':
-            if not userid in following_array and screenname != myname:
+        if bool(config.instafollowback_opt) and status.event == 'follow':
+            if not userid in following_array and not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followback',username)
         logger.dump(status._json, 'last_streaming_event.txt') #debug
