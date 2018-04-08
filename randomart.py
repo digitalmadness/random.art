@@ -1,13 +1,13 @@
 import config
 import status
-import logger
+from logger import add_post
 from random import randint
 from argparse import ArgumentParser
 from sys import argv
 from time import sleep
 from re import sub
 
-'''uses all other modules to post tweets if chance is met calls logger and parses arguments'''
+'''uses all other modules to post tweets if chance is met'''
 
 
 def main():
@@ -42,11 +42,10 @@ def post_tweet(gif_arg):
     copyright = []
     api = config.api
     media,tweetxt,media_state,predictions,faces_detected,danbooru_id = status.media(config.source_folder, gif_arg)
-    log = config.log_file
     tolerance = config.tolerance
     if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
-            logger.addPost(media, media_state, config.log_file)
+            add_post(media, media_state)
         return post_tweet(gif_arg)  # just try again
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
@@ -62,10 +61,10 @@ def post_tweet(gif_arg):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    if copyright != []:
+    if copyright != [] and copyright[0] != 'original':
         tweetxt += ' from ' + copyright[0]
     status.tweet(media, tweetxt, api)
-    logger.addPost(media, media_state, config.log_file)
+    add_post(media, media_state)
 
 
 def parse_args(args):

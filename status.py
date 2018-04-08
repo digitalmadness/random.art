@@ -3,10 +3,11 @@ try:
 except Exception as eeee:
     print(eeee,'\nneural network is not configured!')
 import config
+import logger
 from sys import exit
 from os import path,walk
 from requests import post
-from json import JSONDecoder,dumps
+from json import JSONDecoder
 from io import BytesIO
 from random import choice
 from glob import glob
@@ -93,9 +94,7 @@ def media(folder,gif_arg):
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
     else:
-        #with open('last_saucenao_response.txt', 'w') as f: #debug
-        #    f.write(r.text) #debug
-
+        logger.save(r.text,'last_saucenao_response.txt') #debug
         '''analyze saucenao.com response'''
         results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
         if int(results['header']['user_id'])>0:
@@ -170,9 +169,9 @@ def danbooru(danbooru_id):
         client = Danbooru('danbooru')
         print('\nchecking details on danbooru.donmai.us')
         try:
-            #with open('last_danbooru_response.txt', 'w') as f: #debug
-            #    f.write(dumps(client.post_show(danbooru_id)))  #debug
-            return client.post_show(danbooru_id)
+            danbooru_response = client.post_show(danbooru_id)
+            logger.dump(danbooru_response,'last_danbooru_response.txt') #debug
+            return danbooru_response
         except Exception as eeee:
             print(eeee)
 
