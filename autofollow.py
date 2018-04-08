@@ -74,29 +74,32 @@ class MyStreamListener(tweepy.StreamListener):
                 print(username,'is already followed, trying to likeback..')
                 tweets = []
                 status2_first = False
-                for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
-                        if not bool(status2.in_reply_to_screen_name):
-                            if not status2_first:
-                                status2_first = status2
-                            try:
-                                status2.retweeted_status
-                            except AttributeError:
+                try:
+                    for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
+                            if not bool(status2.in_reply_to_screen_name):
+                                if not status2_first:
+                                    status2_first = status2
                                 try:
-                                    status2.favorite()
-                                    print('success!')
-                                    break
-                                except tweepy.TweepError as eeee:
-                                    if not '139' in eeee.reason:
-                                        print(eeee.reason)
+                                    status2.retweeted_status
+                                except AttributeError:
+                                    try:
+                                        status2.favorite()
+                                        print('success!')
                                         break
-                        if status2_count > 19:
-                            print('only retweets!')
-                            try:
-                                status2_first.favorite()
-                                print('liked first retweet anyway')
-                            except tweepy.TweepError:
-                                pass
-                            break
+                                    except tweepy.TweepError as eeee:
+                                        if not '139' in eeee.reason:
+                                            print(eeee.reason)
+                                            break
+                            if status2_count > 19:
+                                print('only retweets!')
+                                try:
+                                    status2_first.favorite()
+                                    print('liked first retweet anyway')
+                                except tweepy.TweepError:
+                                    pass
+                                break
+                except tweepy.TweepError as eeee:
+                    print('error while trying to get',username,'tweets!\n',eeee.reason)
             elif not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followed',username)
