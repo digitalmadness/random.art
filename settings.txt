@@ -8,7 +8,7 @@ secret_token =
 api_key_saucenao = 
 
 [App]
-enable_neural_network = 0
+enable_neural_network = 1
 image_folder = /replace/with/path_to_pics_folder/
 execution_chance = 5
 discard_pic_if_less_than_x_kilobytes = 100
