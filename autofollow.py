@@ -1,5 +1,4 @@
-from bot import config
-from bot import logger 
+from bot import config,logger 
 import tweepy
 import random # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
@@ -50,13 +49,13 @@ def main():
         following_now_counter = 0
         while True:
             if unfollow_arg or stop_code == 'following_hardlimit_hit':
-                if not bool(config.unfollow_opt):
+                if not config.unfollow_opt:
                     print('unfollowing option disabled in settings! this script cant follow more people, exiting now')
                     break
                 else:
                     unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
                     following_now_counter = 0
-            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), bool(config.followback_opt), bool(config.like_opt), following_now_counter)
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), config.followback_opt, config.like_opt, following_now_counter)
             if stop_code == 'custom_following_limit_hit':
                 print('mission completion! script will exit now')
                 break
@@ -104,7 +103,7 @@ class MyStreamListener(tweepy.StreamListener):
                                 break
                 except tweepy.TweepError as eeee:
                     print('error while trying to get',username,'tweets!\n',eeee.reason)
-            elif bool(logger.read('follow_allowed_state.txt')) and not userid in already_followed_array and screenname != myname:
+            elif logger.read('follow_allowed_state.txt') == '1' and not userid in already_followed_array and screenname != myname:
                 try:
                     api.create_friendship(userid)
                     print('followed',username)
@@ -112,10 +111,10 @@ class MyStreamListener(tweepy.StreamListener):
                     logger.add_follow(userid)
                 except tweepy.TweepError as eeee:
                     print('\ntweepy error!\n' + eeee.reason)
-                    if '161' in str(e.reason):
+                    if '161' in str(eeee.reason):
                         print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\ndisabling followback for now..')
-                        logger.save('False','follow_allowed_state.txt')
-        if bool(config.instafollowback_opt) and status.event == 'follow':
+                        logger.save('0','follow_allowed_state.txt')
+        if config.instafollowback_opt and status.event == 'follow':
             if not userid in following_array and not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followback',username)
@@ -131,12 +130,12 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
         if following_counter >= custom_following_limit:
                 return 'custom_following_limit_hit', following_now_counter
         sleep_time = 1+random.random()
-        if following_counter >= random.randint(4988,5000):
-            if following_counter >= len(followers_array)+500 - random.randint(10,20):
+        if following_counter > 5000:
+            if following_counter >= len(followers_array) + random.randint(900,1000):
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
-            if len(followers_array) <= 5000:
+            elif len(followers_array) <= 5000:
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
@@ -156,10 +155,13 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                         dood_followers_count = status.user.followers_count
                         dood_following_count = status.user.friends_count
                         if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > config.min_followers:
-                            status.user.follow()
-                            following_now_counter += 1
-                            following_counter += 1  # real following counter
-                            print('followed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
+                            if logger.read('follow_allowed_state.txt') == '1':
+                                status.user.follow()
+                                following_now_counter += 1
+                                following_counter += 1  # real following counter
+                                print('followed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
+                            else:
+                                print('following temporarily disabled!')
                             if like_opt:
                                 status.favorite()
                                 print('liked this tweet')
@@ -175,9 +177,9 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                         logger.add_follow(userid)
         except tweepy.TweepError as eeee:
             print('\ntweepy error!\n' + eeee.reason)
-            if '161' in str(e.reason):
+            if '161' in str(eeee.reason):
                 print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\nwaiting',sleep_time_long,'sec before next try..')
-                logger.save('False','follow_allowed_state.txt')
+                logger.save('0','follow_allowed_state.txt')
                 sleep(sleep_time_long)
                 return 'restart', following_now_counter
         except StopIteration:
@@ -195,27 +197,31 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
     already_followed_array = logger.check_follow()
     unfollowing_candidates = []
     for dood in reversed(following_array):
-        if not dood in reversed(followers_array) and dood in already_followed_array:
-            unfollowing_candidates.append(dood)
+        if not dood in reversed(followers_array):
+            if dood in already_followed_array or not config.unfollow_filter_opt:
+                unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow\n')
     for unfollowed_count,dood in enumerate(unfollowing_candidates):
         sleep_time = random.random()
-        print('user id ',dood, '(followed by this script) didnt followed you back')
+        if dood in already_followed_array:
+            print('user id ',dood, '(followed by this script) didnt followed you back')
+        else:
+            print('user id ',dood, 'didnt followed you back')
+            logger.add_follow(dood)
         api.destroy_friendship(id=dood)
-        unfollowed_count += 1
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
-        if unfollowed_count > random.randint(custom_unfollowing_limit - 10, custom_unfollowing_limit) or unfollowed_count >= len(unfollowing_candidates) - following_now_counter:
+        if unfollowed_count > len(following_array) - len(followers_array) or unfollowed_count >= custom_unfollowing_limit:
             sleep_time_long = 60*60+60*random.random()
-            print('\nunfollowing subroutine stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time_long,' sec before another following cycle to avoid detection..\n')
+            print('\nunfollowing subroutine stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time_long,'sec before another following cycle to avoid detection..\n')
             sleep(sleep_time_long)
             break
 
 
 def get_tokens():
-    '''get temp oauth tokens using totally legit api keys'''
-    consumer_key = 'Fpl5UUVwvaczUzzpVJ8Rlw'
-    consumer_secret = 'z73HF21zCz5CaxzDM6M0OPeaCBYGfHUG3FYBgcMB2Y'
+    '''get temp oauth tokens using twicca api keys'''
+    consumer_key = '7S2l5rQTuFCj4YJpF7xuTQ'
+    consumer_secret = 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4'
     REQUEST_TOKEN_URL = 'https://api.twitter.com/oauth/request_token'
     ACCESS_TOKEN_URL = 'https://api.twitter.com/oauth/access_token'
     AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
@@ -241,9 +247,9 @@ def get_tokens():
 
 def temp_auth(token,token_secret):
     '''set api with temp oauth tokens'''
-    auth = tweepy.OAuthHandler('Fpl5UUVwvaczUzzpVJ8Rlw', 'z73HF21zCz5CaxzDM6M0OPeaCBYGfHUG3FYBgcMB2Y')
+    auth = tweepy.OAuthHandler('7S2l5rQTuFCj4YJpF7xuTQ', 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4')
     auth.set_access_token(token,token_secret)
-    api = tweepy.API(auth, compression=True)
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
     return api
 
 
