@@ -1,9 +1,4 @@
-try:
-    import moeflow
-except Exception as eeee:
-    print(eeee,'\nneural network is not configured!')
-from bot import config
-from bot import logger
+from bot import config,logger
 from sys import exit
 from os import path,walk
 from requests import post
@@ -16,7 +11,6 @@ from time import sleep
 from collections import OrderedDict
 from pyfiglet import Figlet
 from pybooru import Danbooru,Moebooru
-
 
 '''handles statuses from bot, neural network, reverse searches pics and makes sure it doesn't post anything repeated or not found on saucenao'''
 
@@ -55,7 +49,13 @@ def media(folder,gif_arg):
         return '','','retry','',False,0
 
     '''run neural network'''
-    if bool(config.neural_opt) and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
+    try:
+        import moeflow
+        neural_opt = config.neural_opt
+    except Exception as eeee:
+        print(eeee,'\nneural network is not configured!')
+        neural_opt = False
+    if neural_opt and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions,faces_detected = moeflow.neuralnetwork(media)
         #if not faces_detected: #debug
         #    return '','','retry','',False,0 #debug
