@@ -1,5 +1,5 @@
-import config
-import logger 
+from bot import config
+from bot import logger 
 import tweepy
 import random # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
@@ -16,7 +16,7 @@ def main():
     '''run autofollow addon'''
     stream_arg = argument_parser(argv[1:]).s
     unfollow_arg = argument_parser(argv[1:]).u
-    print(Figlet(font='slant').renderText('''autofollow'''),'\n\nlogging in..') #print welcome message
+    print(Figlet(font='slant').renderText('''autofollow'''),'\n\nlogging in..') #welcome message
     token,secret = get_tokens()
     global api
     api = temp_auth(token, secret)
@@ -32,9 +32,13 @@ def main():
         following_array.extend(page)
     print('\nwelcome, @' + myname + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array))
     if stream_arg:
-        myStream = tweepy.Stream(auth = api.auth, listener=MyStreamListener())
-        print('\nconnected to stream! listening for events..')
-        myStream.userstream()
+        while True:
+            try:
+                myStream = tweepy.Stream(auth = api.auth, listener=MyStreamListener())
+                print('\nconnected to stream! listening for events..')
+                myStream.userstream()
+            except Exception as eeee:
+                print(eeee,'\n\nsomething fucked up, restarting..')
     else:
         print('\nsearching for tweets with',config.search_phrase,'and following authors with > ',config.min_followers,'followers')
         if config.like_opt:
@@ -100,11 +104,17 @@ class MyStreamListener(tweepy.StreamListener):
                                 break
                 except tweepy.TweepError as eeee:
                     print('error while trying to get',username,'tweets!\n',eeee.reason)
-            elif not userid in already_followed_array and screenname != myname:
-                api.create_friendship(userid)
-                print('followed',username)
-                following_array.append(userid)
-                logger.add_follow(userid)
+            elif bool(logger.read('follow_allowed_state.txt')) and not userid in already_followed_array and screenname != myname:
+                try:
+                    api.create_friendship(userid)
+                    print('followed',username)
+                    following_array.append(userid)
+                    logger.add_follow(userid)
+                except tweepy.TweepError as eeee:
+                    print('\ntweepy error!\n' + eeee.reason)
+                    if '161' in str(e.reason):
+                        print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\ndisabling followback for now..')
+                        logger.save('False','follow_allowed_state.txt')
         if bool(config.instafollowback_opt) and status.event == 'follow':
             if not userid in following_array and not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
@@ -121,7 +131,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
         if following_counter >= custom_following_limit:
                 return 'custom_following_limit_hit', following_now_counter
         sleep_time = 1+random.random()
-        '''if following_counter >= random.randint(4988,5000):
+        if following_counter >= random.randint(4988,5000):
             if following_counter >= len(followers_array)+500 - random.randint(10,20):
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
@@ -129,7 +139,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             if len(followers_array) <= 5000:
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
-                return 'following_hardlimit_hit',following_now_counter'''
+                return 'following_hardlimit_hit',following_now_counter
         try:
             userid = status.user.id
             username = '@'+str(status.user.screen_name)
@@ -167,6 +177,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             print('\ntweepy error!\n' + eeee.reason)
             if '161' in str(e.reason):
                 print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\nwaiting',sleep_time_long,'sec before next try..')
+                logger.save('False','follow_allowed_state.txt')
                 sleep(sleep_time_long)
                 return 'restart', following_now_counter
         except StopIteration:
@@ -216,9 +227,9 @@ def get_tokens():
     except ValueError as e:
         raise 'Invalid response from Twitter requesting temp token: {0}'.format(e)
     url = oauth_client.authorization_url(AUTHORIZATION_URL)
-    print('trying to start a browser to visit the following Twitter page.. if nothing happened, copy the URL to your browser and retrieve the pincode to authenticate the bot: \n\n',url)
+    print('trying to start a browser to visit the following Twitter page.. if nothing happened, copy the URL to your browser and retrieve PIN to authenticate the bot: \n\n',url)
     webbrowser.open(url)
-    pincode = input('\nplease enter your pincode here: ')
+    pincode = input('\nplease enter your pin code here: ')
     print('\ngenerating and signing request for an access token..')
     oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret,resource_owner_key=resp.get('oauth_token'),resource_owner_secret=resp.get('oauth_token_secret'),verifier=pincode)
     try:
@@ -239,7 +250,7 @@ def temp_auth(token,token_secret):
 def argument_parser(args):
     '''parse CLI arguments'''
     parser = ArgumentParser()
-    parser.add_argument('-s', help='streaming mode (experimental)',action='store_true')
+    parser.add_argument('-s', help='streaming mode which enables instant likefollowback!',action='store_true')
     parser.add_argument('-u', help='clear some space before following',action='store_true')
     return parser.parse_args(args)
 
