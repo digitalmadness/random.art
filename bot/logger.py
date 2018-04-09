@@ -22,13 +22,13 @@ def check_posts(tolerance):
         already_tweeted = open(logs_folder + '/randomart_log.txt', 'r').readlines()[tolerance:]
     else:
         already_tweeted = []
-        with open(logs_folder + '/randomart_log.txt', 'w') as log:
+        with open(logs_folder + '/randomart_log.txt', 'a') as log:
             log.write('')
     return already_tweeted
 
 
 def add_follow(userid):
-    with open(logs_folder + '/autofollow_log.txt', 'w') as log:
+    with open(logs_folder + '/autofollow_log.txt', 'a') as log:
         log.write(str(userid) + '\n')
 
 
