@@ -9,7 +9,7 @@ def run_face_detection(input_image_path):
     """
     args = [
         'ruby',
-        'face_detect.rb',
+        str(os.path.dirname(os.path.abspath(__file__))).replace('/neuralnet','')+'/face_detect.rb',
         input_image_path,
         '/tmp'
     ]
