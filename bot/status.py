@@ -2,8 +2,8 @@ try:
     import moeflow
 except Exception as eeee:
     print(eeee,'\nneural network is not configured!')
-import config
-import logger
+from bot import config
+from bot import logger
 from sys import exit
 from os import path,walk
 from requests import post
@@ -36,7 +36,6 @@ def media(folder,gif_arg):
     est_time = ''
     minsim=77
     predictions = []
-    tolerance = -1 * (config.tolerance)
     media_list = glob(folder + '*')
     if gif_arg:
         while not media.lower().endswith(('gif')):
@@ -47,11 +46,7 @@ def media(folder,gif_arg):
     print('\nopened',media)
 
     '''run some checks'''
-    try:
-        already_tweeted = open(config.log_file, 'r').readlines()[tolerance:]
-    except IndexError:
-        already_tweeted = open(config.log_file, 'r').readlines()
-    for element in already_tweeted:
+    for element in logger.check_posts(-1*(config.tolerance)):
         if element.split('\t')[1] == media:
             print('pic was already tweeted, trying another file..')
             return '','','retry','',False,0
@@ -186,8 +181,7 @@ def tweet(tweet_media, tweet_text, api):
 
 def welcome():
     '''startup message'''
-    fi = Figlet(font='slant')
-    print(fi.renderText('''randomartv5'''),'\nlogging in..\n')
+    print(Figlet(font='slant').renderText('''randomartv5'''),'\nlogging in..\n')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
         exit('you forgot to replace default pictures folder in settings.txt!')
     api = config.api

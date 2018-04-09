@@ -1,6 +1,6 @@
-import config
-import status
-from logger import add_post
+from bot import config
+from bot import logger
+from bot import status
 from random import randint
 from argparse import ArgumentParser
 from sys import argv
@@ -25,8 +25,7 @@ def main():
             try:
                 post_tweet(gif_arg)
             except Exception as eeee:
-                print(eeee)
-                print ('something fucked up, restarting bot in 60 seconds..\n\nif this happens right after start pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
+                print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif this happens right after start pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
                 sleep(60)
                 main()
             if args.t or gif_arg:
@@ -45,7 +44,7 @@ def post_tweet(gif_arg):
     tolerance = config.tolerance
     if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
-            add_post(media, media_state)
+            logger.add_post(media, media_state)
         return post_tweet(gif_arg)  # just try again
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
@@ -64,7 +63,7 @@ def post_tweet(gif_arg):
     if copyright != [] and copyright[0] != 'original':
         tweetxt += ' from ' + copyright[0]
     status.tweet(media, tweetxt, api)
-    add_post(media, media_state)
+    logger.add_post(media, media_state)
 
 
 def parse_args(args):

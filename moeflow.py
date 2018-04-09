@@ -1,5 +1,8 @@
+from bot import config
+from neuralnet import classify,face_detect
 import cv2
 import tempfile
+import os
 import tensorflow as tf
 import uuid
 import argparse
@@ -7,17 +10,14 @@ from sys import exit
 from random import choice
 from pyfiglet import Figlet
 from glob import glob
-from classify import classify_resized_face
-from face_detect import run_face_detection
-from config import source_folder
 
 
 def neuralnetwork(filename):
     results = []
-    label_lines = [line.strip() for line in tf.gfile.GFile('face_labels.txt')]
+    label_lines = [line.strip() for line in tf.gfile.GFile(str(os.path.dirname(os.path.abspath(__file__)))+'/neuralnet/face_labels.txt')]
     graph = tf.Graph()
     graph_def = tf.GraphDef()
-    with tf.gfile.FastGFile('face_graph.pb', 'rb') as f:
+    with tf.gfile.FastGFile(str(os.path.dirname(os.path.abspath(__file__)))+'/neuralnet/face_graph.pb', 'rb') as f:
         graph_def.ParseFromString(f.read())
     with graph.as_default():
         tf.import_graph_def(graph_def, name='')
@@ -26,7 +26,7 @@ def neuralnetwork(filename):
     with tempfile.NamedTemporaryFile(mode='wb', suffix='.jpg') as input_jpg:
         faces_detected = True
         # Run face detection with animeface-2009
-        detected_faces = run_face_detection(filename)
+        detected_faces = face_detect.run_face_detection(filename)
         # This operation will rewrite detected faces to 96 x 96 px
         resize_faces(detected_faces)
         # Classify with TensorFlow
@@ -35,7 +35,7 @@ def neuralnetwork(filename):
             print('\nfaces not detected..\n')
             detected_faces = [filename]
         for face in detected_faces:
-            predictions = classify_resized_face(face, label_lines, graph)
+            predictions = classify.classify_resized_face(face, label_lines, graph)
             face_name = uuid.uuid4().hex + '.jpg'
             results.append(predictions[0])
             if __name__ == '__main__':
@@ -56,10 +56,9 @@ def resize_faces(image_files, width=96, height=96):
 
 
 if __name__ == '__main__':
-    fi = Figlet(font='slant')
-    print(fi.renderText('''moeflow''')) #print welcome message
-    if source_folder == '/replace/with/path_to_pics_folder/':
+    print(Figlet(font='slant').renderText('''moeflow''')) #welcome message
+    if config.source_folder == '/replace/with/path_to_pics_folder/':
         exit('you forgot to replace default pictures folder in settings.txt!')
-    waifu = choice(glob(source_folder + '*'))
+    waifu = choice(glob(config.source_folder + '*'))
     print('recognizing characters in',waifu)
     neuralnetwork(waifu)
