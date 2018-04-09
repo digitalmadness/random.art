@@ -1,6 +1,4 @@
-from bot import config
-from bot import logger
-from bot import status
+from bot import config,logger,status
 from random import randint
 from argparse import ArgumentParser
 from sys import argv
@@ -53,7 +51,7 @@ def post_tweet(gif_arg):
         copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
     if characters != []:
         tweetxt += '\n' + ', '.join(characters)
-    elif bool(config.neural_opt) and faces_detected:
+    elif config.neural_opt and faces_detected:
         waifus = ''
         for waifu in predictions:
             if waifu[1] > 0.77:
