@@ -24,7 +24,6 @@ except:
 	exit('error reading twitter api keys from settings.txt! make sure you filled it corrrectly')
 source_folder = app_config['image_folder']
 discard_size = app_config['discard_pic_if_less_than_x_kilobytes']
-log_file = app_config['log_file']
 try:
 	tolerance = int(app_config['allow_repeat_after'])
 	chance = int(app_config['execution_chance'])
@@ -57,7 +56,6 @@ except:
 	followback_opt = autofollow_config['follow_those_who_already_follow_you']
 	like_opt = autofollow_config['like_all_found_tweets']
 	instafollowback_opt = autofollow_config['instant_follow_back']
-autofollow_log_file = autofollow_config['autofollow_log_file']
 
 auth = tweepy.OAuthHandler(api_key, secret_key)
 auth.set_access_token(token, secret_token)
