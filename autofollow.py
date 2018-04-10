@@ -1,6 +1,6 @@
 from bot import config,logger 
 import tweepy
-import random # +146% to sneaking from twatter bot policy
+from random import randint,uniform # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
 from sys import argv
 from pyfiglet import Figlet
@@ -27,6 +27,8 @@ def main():
         followers_array.extend(page)
     global following_array
     following_array = []
+    global liked_tweets_array
+    liked_tweets_array = []
     for page in tweepy.Cursor(api.friends_ids, id=myid).pages():
         following_array.extend(page)
     print('\nwelcome, @' + myname + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array))
@@ -76,29 +78,30 @@ class MyStreamListener(tweepy.StreamListener):
             if userid in following_array:
                 print(username,'is already followed, trying to likeback..')
                 tweets = []
-                status2_first = False
                 try:
                     for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
-                            if not bool(status2.in_reply_to_screen_name):
-                                if not status2_first:
-                                    status2_first = status2
+                            if not bool(status2.in_reply_to_screen_name) and status2.id not in liked_tweets_array:
+                                if status2_count == 1:
+                                    status21 = status2
                                 try:
                                     status2.retweeted_status
                                 except AttributeError:
                                     try:
                                         status2.favorite()
-                                        print('success!')
+                                        liked_tweets_array.append(status2.id)
+                                        print('success')
                                         break
                                     except tweepy.TweepError as eeee:
                                         if not '139' in eeee.reason:
                                             print(eeee.reason)
                                             break
-                            if status2_count > 19:
+                            if status2_count > 17:
                                 print('only retweets!')
                                 try:
-                                    status2_first.favorite()
-                                    print('liked first retweet anyway')
-                                except tweepy.TweepError:
+                                    status21.favorite()
+                                    liked_tweets_array.append(status21.id)
+                                    print('liked 1 rt anyway')
+                                except Exception:
                                     pass
                                 break
                 except tweepy.TweepError as eeee:
@@ -124,14 +127,14 @@ class MyStreamListener(tweepy.StreamListener):
 def follow_subroutine(followers_array, following_counter, search_phrase, custom_following_limit, followback_opt, like_opt, following_now_counter):
     '''find tweets and follow author if all checks passed (and like tweet if set)'''
     print('\nstarting following subroutine..\nwill stop after',custom_following_limit,'people followed')
-    sleep_time_long = 6*60*60+60*random.random()
+    sleep_time_long = randint(18000,36000)
     already_followed_array = logger.check_follow()
     for status in tweepy.Cursor(api.search, q=search_phrase).items():
         if following_counter >= custom_following_limit:
                 return 'custom_following_limit_hit', following_now_counter
-        sleep_time = 1+random.random()
+        sleep_time = uniform(1,2.5)
         if following_counter > 5000:
-            if following_counter >= len(followers_array) + random.randint(900,1000):
+            if following_counter >= len(followers_array) + randint(980,1000):
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
                 return 'following_hardlimit_hit',following_now_counter
@@ -197,22 +200,22 @@ def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit
     already_followed_array = logger.check_follow()
     unfollowing_candidates = []
     for dood in reversed(following_array):
-        if not dood in reversed(followers_array):
-            if dood in already_followed_array or not config.unfollow_filter_opt:
+        if not dood in followers_array:
+            if dood in already_followed_array or config.unfollow_filter_opt:
                 unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow\n')
     for unfollowed_count,dood in enumerate(unfollowing_candidates):
-        sleep_time = random.random()
+        sleep_time = uniform(0.2,1)
         if dood in already_followed_array:
             print('user id ',dood, '(followed by this script) didnt followed you back')
         else:
-            print('user id ',dood, 'didnt followed you back')
+            print('user id',dood, 'doesnt follow you back')
             logger.add_follow(dood)
         api.destroy_friendship(id=dood)
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
         if unfollowed_count > len(following_array) - len(followers_array) or unfollowed_count >= custom_unfollowing_limit:
-            sleep_time_long = 60*60+60*random.random()
+            sleep_time_long = randint(3600,7200)
             print('\nunfollowing subroutine stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time_long,'sec before another following cycle to avoid detection..\n')
             sleep(sleep_time_long)
             break
