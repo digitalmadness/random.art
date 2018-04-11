@@ -10,9 +10,9 @@ api_key_saucenao =
 [App]
 enable_neural_network = 1
 image_folder = /replace/with/path_to_pics_folder/
-execution_chance = 5
+execution_chance = 0.3
 discard_pic_if_less_than_x_kilobytes = 100
-time_between_tweets = 60
+time_between_tweets = 300
 allow_repeat_after = 10000
 
 [Autofollow]
