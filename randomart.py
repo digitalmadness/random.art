@@ -1,9 +1,9 @@
 from bot import config,logger,status
-from random import randint
 from argparse import ArgumentParser
 from sys import argv
 from time import sleep
 from re import sub
+import random
 
 '''uses all other modules to post tweets if chance is met'''
 
@@ -19,17 +19,16 @@ def main():
     else:
         gif_arg = False
     while True:
-        if randint(0, 99) < config.chance or args.t or gif_arg:
+        if random.random() < config.chance or args.t or gif_arg:
             try:
                 post_tweet(gif_arg)
             except Exception as eeee:
-                print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif this happens right after start pls check if you filled settings.txt correctly\nor contact https://twitter.com/digitaImadness')
+                print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
                 sleep(60)
                 main()
             if args.t or gif_arg:
                 break
-        else:
-            print('sleeping for',config.interval,'s..')
+        print('sleeping for',config.interval,'s..')
         sleep(config.interval)
 
 
@@ -67,8 +66,8 @@ def post_tweet(gif_arg):
 def parse_args(args):
     '''parsing arguments from command line'''
     parser = ArgumentParser()
-    parser.add_argument('-t', help='manual tweet', action='store_true')
-    parser.add_argument('-g', help='manual tweet GIF', action='store_true')
+    parser.add_argument('-t', help='force tweet and exit', action='store_true')
+    parser.add_argument('-g', help='force tweet GIF and exit', action='store_true')
     return parser.parse_args(args)
 
 
