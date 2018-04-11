@@ -186,4 +186,4 @@ def welcome():
         exit('you forgot to replace default pictures folder in settings.txt!')
     api = config.api
     myid = api.me()
-    print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance, '% chance..')
+    print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance*100, '% chance..')
