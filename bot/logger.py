@@ -8,9 +8,7 @@ date = str(datetime.datetime.now())
 logs_folder = str(os.path.dirname(os.path.abspath(__file__))).replace('/bot','/logs')
 if not os.path.exists(logs_folder):
     os.makedirs(logs_folder)
-if not os.path.exists(logs_folder+'/follow_allowed_state.txt'):
-    with open(logs_folder+'/follow_allowed_state.txt', 'w') as log:
-            log.write('True')
+
 
 def add_post(img_path, media_state):
     with open(logs_folder + '/randomart_log.txt', 'a') as log:
@@ -56,5 +54,10 @@ def dump(text,file):
 
 
 def read(file):
-    with open(logs_folder + '/' + file, 'r') as f:
-        return f.read()
+    if os.path.isfile(logs_folder + '/' + file):
+        with open(logs_folder + '/' + file, 'r') as f:
+            return f.read()
+    else:
+        with open(logs_folder + '/' + file, 'a') as f:
+            f.write('1')
+            return '1'
