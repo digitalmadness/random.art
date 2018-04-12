@@ -80,7 +80,7 @@ class MyStreamListener(tweepy.StreamListener):
                 tweets = []
                 try:
                     for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
-                            if not bool(status2.in_reply_to_screen_name) and status2.id not in liked_tweets_array:
+                            if logger.read('like_allowed_state.txt') == '1' and not bool(status2.in_reply_to_screen_name) and status2.id not in liked_tweets_array:
                                 if status2_count == 1:
                                     status21 = status2
                                 try:
@@ -92,17 +92,14 @@ class MyStreamListener(tweepy.StreamListener):
                                         print('success')
                                         break
                                     except tweepy.TweepError as eeee:
-                                        if not '139' in eeee.reason:
+                                        if '429' in str(eeee.reason):
+                                            print('\ncode 429 detected! you probably ran out of daily like limit\n\ndisabling likes for now..')
+                                            logger.save('0','like_allowed_state.txt')
+                                        elif not '139' in eeee.reason:
                                             print(eeee.reason)
                                             break
                             if status2_count > 17:
-                                print('only retweets!')
-                                try:
-                                    status21.favorite()
-                                    liked_tweets_array.append(status21.id)
-                                    print('liked 1 rt anyway')
-                                except Exception:
-                                    pass
+                                print('only retweets so no like for them')
                                 break
                 except tweepy.TweepError as eeee:
                     print('error while trying to get',username,'tweets!\n',eeee.reason)
