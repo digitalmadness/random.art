@@ -2,7 +2,7 @@ from bot import config,logger
 import tweepy
 from random import randint,uniform # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
-from sys import argv
+from sys import argv,exit
 from pyfiglet import Figlet
 from argparse import ArgumentParser
 from requests_oauthlib import OAuth1Session
@@ -25,6 +25,7 @@ def main():
     followers_array = []
     for page in tweepy.Cursor(api.followers_ids, id=myid).pages():
         followers_array.extend(page)
+    logger.save(followers_array,'followers_backup.txt')
     global following_array
     following_array = []
     global liked_tweets_array
@@ -57,7 +58,14 @@ def main():
                 else:
                     unfollow_subroutine(following_array,followers_array,int(config.custom_unfollowing_limit),following_now_counter)
                     following_now_counter = 0
-            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), config.followback_opt, config.like_opt, following_now_counter)
+            nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
+            if nowtime - modtime > 14400:
+                logger.save('1','follow_allowed_state.txt')
+            if logger.read('follow_allowed_state.txt') == '1':
+                stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), config.followback_opt, config.like_opt, following_now_counter)
+            else:
+                print('following temporarily disabled! sleeping 5 min to check again..')
+                sleep(300)
             if stop_code == 'custom_following_limit_hit':
                 print('mission completion! script will exit now')
                 break
@@ -65,6 +73,12 @@ def main():
 
 class MyStreamListener(tweepy.StreamListener):
     def on_event(self, status):
+        nowtime,modtime = logger.fmtime('like_allowed_state.txt')
+        if nowtime - modtime > 3600:
+            logger.save('1','like_allowed_state.txt')
+        nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
+        if nowtime - modtime > 14400:
+            logger.save('1','follow_allowed_state.txt')
         already_followed_array = logger.check_follow()
         source = status._json.get('source')
         userid = int(source.get('id'))
@@ -81,8 +95,6 @@ class MyStreamListener(tweepy.StreamListener):
                 try:
                     for status2_count,status2 in enumerate(tweepy.Cursor(api.user_timeline,id=username).items()):
                             if logger.read('like_allowed_state.txt') == '1' and not bool(status2.in_reply_to_screen_name) and status2.id not in liked_tweets_array:
-                                if status2_count == 1:
-                                    status21 = status2
                                 try:
                                     status2.retweeted_status
                                 except AttributeError:
@@ -95,7 +107,9 @@ class MyStreamListener(tweepy.StreamListener):
                                         if '429' in str(eeee.reason):
                                             print('\ncode 429 detected! you probably ran out of daily like limit\n\ndisabling likes for now..')
                                             logger.save('0','like_allowed_state.txt')
-                                        elif not '139' in eeee.reason:
+                                        if '139' in str(eeee.reason):
+                                            liked_tweets_array.append(status2.id)
+                                        else:
                                             print(eeee.reason)
                                             break
                             if status2_count > 17:
@@ -193,6 +207,8 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
 
 def unfollow_subroutine(following_array,followers_array,custom_unfollowing_limit,following_now_counter):
     '''unfollow non mutuals'''
+    if len(following_array) < 1000:
+        exit('wtf')
     print('\nstarting unfollowing subroutine, lets clean some space for new people..\nno worries, it will unfollow only non mutuals followed by this script from oldest to newest\nwill stop after',custom_unfollowing_limit,'users unfollowed')
     already_followed_array = logger.check_follow()
     unfollowing_candidates = []
@@ -227,7 +243,7 @@ def get_tokens():
     AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
     SIGNIN_URL = 'https://api.twitter.com/oauth/authenticate'
     oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret, callback_uri='oob')
-    print('\nRequesting temp token from Twitter...\n')
+    print('\nrequesting temp token from Twitter...\n')
     try:
         resp = oauth_client.fetch_request_token(REQUEST_TOKEN_URL)
     except ValueError as e:
