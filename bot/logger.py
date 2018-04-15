@@ -1,4 +1,5 @@
 from json import dumps
+import time
 import datetime
 import os
 
@@ -61,3 +62,7 @@ def read(file):
         with open(logs_folder + '/' + file, 'a') as f:
             f.write('1')
             return '1'
+
+
+def fmtime(file):
+    return time.time(),os.path.getmtime(logs_folder + '/' + file)
