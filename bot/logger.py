@@ -2,6 +2,7 @@ from json import dumps
 import time
 import datetime
 import os
+import wget
 
 """who needs standart libs anyway"""
 
@@ -52,6 +53,10 @@ def save(text,file):
 def dump(text,file):
     with open(logs_folder + '/' + file, 'w') as f:
         f.write(dumps(text))
+
+
+def save_profile_pic(url):
+    return wget.download(url, out=logs_folder+'/')
 
 
 def read(file):
