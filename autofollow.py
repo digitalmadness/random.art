@@ -1,4 +1,5 @@
 from bot import config,logger 
+from neuralnet import face_detect
 import tweepy
 from random import randint,uniform # +146% to sneaking from twatter bot policy
 from time import sleep # +1000% to sneaking
@@ -6,6 +7,7 @@ from sys import argv,exit
 from pyfiglet import Figlet
 from argparse import ArgumentParser
 from requests_oauthlib import OAuth1Session
+from os import remove
 import webbrowser
 
 ''' this script searches tweets with desired phrase(configure is settings), likes them(optional) and follows author if all checks passed '''
@@ -61,11 +63,7 @@ def main():
             nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
             if nowtime - modtime > 14400:
                 logger.save('1','follow_allowed_state.txt')
-            if logger.read('follow_allowed_state.txt') == '1':
-                stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), config.followback_opt, config.like_opt, following_now_counter)
-            else:
-                print('following temporarily disabled! sleeping 5 min to check again..')
-                sleep(300)
+            stop_code,following_now_counter = follow_subroutine(followers_array, following_counter, config.search_phrase, int(config.custom_following_limit), config.followback_opt, config.like_opt, following_now_counter)
             if stop_code == 'custom_following_limit_hit':
                 print('mission completion! script will exit now')
                 break
@@ -73,12 +71,7 @@ def main():
 
 class MyStreamListener(tweepy.StreamListener):
     def on_event(self, status):
-        nowtime,modtime = logger.fmtime('like_allowed_state.txt')
-        if nowtime - modtime > 3600:
-            logger.save('1','like_allowed_state.txt')
-        nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
-        if nowtime - modtime > 14400:
-            logger.save('1','follow_allowed_state.txt')
+        update_states()
         already_followed_array = logger.check_follow()
         source = status._json.get('source')
         userid = int(source.get('id'))
@@ -132,11 +125,16 @@ class MyStreamListener(tweepy.StreamListener):
             if not userid in following_array and not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followback',username)
-        logger.dump(status._json, 'last_streaming_event.txt') #debug
+        '''logger.dump(status._json, 'last_streaming_event.txt') #debug'''
 
 
 def follow_subroutine(followers_array, following_counter, search_phrase, custom_following_limit, followback_opt, like_opt, following_now_counter):
     '''find tweets and follow author if all checks passed (and like tweet if set)'''
+    update_states()
+    if logger.read('follow_allowed_state.txt') == '0':
+        print('\nfollowing temporarily not allowed! sleeping 5 min..')
+        sleep(300)
+        return 'restart', following_now_counter
     print('\nstarting following subroutine..\nwill stop after',custom_following_limit,'people followed')
     sleep_time_long = randint(18000,36000)
     already_followed_array = logger.check_follow()
@@ -144,7 +142,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
         if following_counter >= custom_following_limit:
                 return 'custom_following_limit_hit', following_now_counter
         sleep_time = uniform(1,2.5)
-        if following_counter > 5000:
+        '''if following_counter > 5000:
             if following_counter >= len(followers_array) + randint(980,1000):
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
@@ -152,7 +150,7 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
             elif len(followers_array) <= 5000:
                 print('\nfollowing subroutine stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'sec before next step to avoid detection..\n')
                 sleep(sleep_time)
-                return 'following_hardlimit_hit',following_now_counter
+                return 'following_hardlimit_hit',following_now_counter'''
         try:
             userid = status.user.id
             username = '@'+str(status.user.screen_name)
@@ -168,25 +166,29 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                     else:
                         dood_followers_count = status.user.followers_count
                         dood_following_count = status.user.friends_count
-                        if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > config.min_followers:
-                            if logger.read('follow_allowed_state.txt') == '1':
+                        if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > config.min_followers and not status.user.default_profile_image and not status.user.default_profile:
+                            profile_pic = logger.save_profile_pic(status.user.profile_image_url_https.replace('_normal',''))
+                            if not config.anime_avi_opt or face_detect.run_face_detection(profile_pic): #detect anime avi
                                 status.user.follow()
                                 following_now_counter += 1
                                 following_counter += 1  # real following counter
-                                print('followed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
+                                print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
                             else:
-                                print('following temporarily disabled!')
-                            if like_opt:
+                                print('\n',username,'avi doesnt seems like anime')
+                            remove(profile_pic)
+                            if like_opt and logger.read('like_allowed_state.txt') == '1':
                                 status.favorite()
                                 print('liked this tweet')
                             sleep(sleep_time)
                         else:
                             if dood_following_count < dood_followers_count - dood_followers_count*0.1:
                                 print(username,'doesnt seems like mutual')
-                            if dood_following_count > 2*dood_followers_count:
-                                print(username,'follows more than 2x his followers, obviously bot')
                             if dood_followers_count < config.min_followers:
                                 print(username,'doesnt have enough followers')
+                            if status.user.default_profile_image or status.user.default_profile:
+                                print(username,'not customized profile, probably bot')
+                            if dood_following_count > 2*dood_followers_count:
+                                print(username,'follows more than 2x his followers, obviously bot')
                         already_followed_array.append(userid)
                         logger.add_follow(userid)
         except tweepy.TweepError as eeee:
@@ -267,6 +269,15 @@ def temp_auth(token,token_secret):
     auth.set_access_token(token,token_secret)
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
     return api
+
+
+def update_states():
+    nowtime,modtime = logger.fmtime('like_allowed_state.txt')
+    if nowtime - modtime > 3600:
+        logger.save('1','like_allowed_state.txt')
+    nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
+    if nowtime - modtime > 14400:
+        logger.save('1','follow_allowed_state.txt')
 
 
 def argument_parser(args):
