@@ -56,8 +56,10 @@ def dump(text,file):
 
 
 def save_profile_pic(url):
-    return wget.download(url, out=logs_folder+'/')
-
+    try:
+        return wget.download(url, out=logs_folder+'/')
+    except Exception:
+        print('error downloading profile pic')
 
 def read(file):
     if os.path.isfile(logs_folder + '/' + file):

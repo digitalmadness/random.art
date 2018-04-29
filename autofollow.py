@@ -82,7 +82,7 @@ class MyStreamListener(tweepy.StreamListener):
         elif screenname != myname:
             print('\nincoming',status.event,'by',username)
         if status.event == 'favorite' or status.event == 'favorited_retweet' and screenname != myname:
-            if userid in following_array:
+            if userid in following_array or userid in already_followed_array:
                 print(username,'is already followed, trying to likeback..')
                 tweets = []
                 try:
@@ -175,7 +175,10 @@ def follow_subroutine(followers_array, following_counter, search_phrase, custom_
                                 print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
                             else:
                                 print('\n',username,'avi doesnt seems like anime')
-                            remove(profile_pic)
+                            try:
+                                remove(profile_pic)
+                            except Exception:
+                                pass
                             if like_opt and logger.read('like_allowed_state.txt') == '1':
                                 status.favorite()
                                 print('liked this tweet')
