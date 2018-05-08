@@ -41,6 +41,8 @@ def main():
         following_array.extend(page)
     print('\nwelcome, @' + myname + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array))
     if stream_arg:
+        global already_followed_array
+        already_followed_array = logger.check_follow()
         while True:
             try:
                 myStream = tweepy.Stream(auth = api.auth, listener=MyStreamListener())
@@ -49,7 +51,7 @@ def main():
             except Exception as e:
                 print(e,'\n\nsomething fucked up, restarting..')
     else:
-        if not stream_arg and not unfollow_arg:
+        if not unfollow_arg:
             print('\nsearching for tweets with',config.search_phrase,'and following authors with > ',config.min_followers,'followers')
         if config.like_opt:
             print('\nlike every found tweet option enabled!')
@@ -76,7 +78,6 @@ def main():
 class MyStreamListener(tweepy.StreamListener):
     def on_event(self, status):
         update_states()
-        already_followed_array = logger.check_follow()
         source = status._json.get('source')
         userid = int(source.get('id'))
         screenname = str(source.get('screen_name'))
@@ -119,7 +120,9 @@ class MyStreamListener(tweepy.StreamListener):
                     api.create_friendship(userid)
                     print('followed',username)
                     following_array.append(userid)
-                    logger.add_follow(userid)
+                    if not userid in already_followed_array:
+                        already_followed_array.append(userid)
+                        logger.add_follow(userid)
                 except tweepy.TweepError as e:
                     print('\ntweepy error!\n' + e.reason)
                     if '161' in str(e.reason):
@@ -176,8 +179,9 @@ def follow_cycle(followers_array, following_counter, search_phrase, custom_follo
                                 status.user.follow()
                                 following_now_counter += 1
                                 following_counter += 1  # real following counter
-                                already_followed_array.append(userid)
-                                logger.add_follow(userid)
+                                if not userid in already_followed_array:
+                                    already_followed_array.append(userid)
+                                    logger.add_follow(userid)
                                 print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
                             else:
                                 print('\n',username,'avi doesnt seems like anime')
@@ -225,13 +229,15 @@ def unfollow_cycle(following_array,followers_array,custom_unfollowing_limit,foll
     unfollowing_candidates = []
     for dood in reversed(following_array):
         if not dood in followers_array:
-            if dood in already_followed_array or config.unfollow_nofilter_opt:
+            if config.unfollow_nofilter_opt or dood in already_followed_array:
                 unfollowing_candidates.append(dood)
     print(len(unfollowing_candidates),'candidates for unfollow found\n')
     for unfollowed_count,dood in enumerate(unfollowing_candidates, 1):
         sleep_time = uniform(0.2,1)
         print('user id',dood, 'didnt follow back')
         api.destroy_friendship(id=dood)
+        if config.unfollow_nofilter_opt and not dood in already_followed_array:
+            logger.add_follow(dood)
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         sleep(sleep_time)
         if unfollowed_count > len(unfollowing_candidates)-1000 or unfollowed_count >= custom_unfollowing_limit:
