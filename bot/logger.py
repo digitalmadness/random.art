@@ -61,6 +61,7 @@ def save_profile_pic(url):
     except Exception:
         print('error downloading profile pic')
 
+
 def read(file):
     if os.path.isfile(logs_folder + '/' + file):
         with open(logs_folder + '/' + file, 'r') as f:

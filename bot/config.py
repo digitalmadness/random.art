@@ -33,7 +33,7 @@ unfollow_opt = bool(int(autofollow_config['enable_unfollow']))
 followback_opt = bool(int(autofollow_config['follow_those_who_already_follow_you']))
 like_opt = bool(int(autofollow_config['like_all_found_tweets']))
 instafollowback_opt = bool(int(autofollow_config['instant_followback_in_stream_mode']))
-unfollow_filter_opt = bool(int(autofollow_config['unfollow_people_doenst_followed_by_this_script']))
+unfollow_nofilter_opt = bool(int(autofollow_config['unfollow_people_doenst_followed_by_this_script']))
 anime_avi_opt = bool(int(autofollow_config['follow_only_people_with_anime_profile_pictures']))
 
 auth = tweepy.OAuthHandler(api_key, secret_key)

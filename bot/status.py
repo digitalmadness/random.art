@@ -52,8 +52,8 @@ def media(folder,gif_arg):
     try:
         import moeflow
         neural_opt = config.neural_opt
-    except Exception as eeee:
-        print(eeee,'\nneural network is not configured!')
+    except Exception as e:
+        print(e,'\nneural network is not configured!')
         neural_opt = False
     if neural_opt and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions,faces_detected = moeflow.neuralnetwork(media)
@@ -76,8 +76,8 @@ def media(folder,gif_arg):
     print('\nsending pic to saucenao.com')
     try:
         r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
-    except Exception as eeee:
-        print(eeee)
+    except Exception as e:
+        print(e)
         return media,'','api_na','',faces_detected,0
     if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
         if r.status_code == 403:
@@ -94,7 +94,7 @@ def media(folder,gif_arg):
         results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
         if int(results['header']['user_id'])>0:
             #api responded
-            print('\nremaining saucenao.com api searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
+            print('\nremaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
             #General issue, api did not respond. Normal site took over for this error state.
             return '','','retry','',False,0
@@ -167,8 +167,8 @@ def danbooru(danbooru_id):
             danbooru_response = client.post_show(danbooru_id)
             logger.dump(danbooru_response,'last_danbooru_response.txt') #debug
             return danbooru_response
-        except Exception as eeee:
-            print(eeee)
+        except Exception as e:
+            print(e)
 
 
 def tweet(tweet_media, tweet_text, api):
