@@ -19,7 +19,7 @@ secret_key = twitter_config['secret_key']
 token = twitter_config['token']
 secret_token = twitter_config['secret_token']
 source_folder = app_config['image_folder']
-discard_size = app_config['discard_pic_if_less_than_x_kilobytes']
+discard_size = int(app_config['discard_pic_if_less_than_x_kilobytes'])
 tolerance = int(app_config['allow_repeat_after'])
 chance = float(app_config['execution_chance'])
 interval = int(app_config['time_between_tweets'])
@@ -35,6 +35,7 @@ like_opt = bool(int(autofollow_config['like_all_found_tweets']))
 instafollowback_opt = bool(int(autofollow_config['instant_followback_in_stream_mode']))
 unfollow_nofilter_opt = bool(int(autofollow_config['unfollow_people_doenst_followed_by_this_script']))
 anime_avi_opt = bool(int(autofollow_config['follow_only_people_with_anime_profile_pictures']))
+likeback_opt = bool(int(autofollow_config['when_user_likes_your_tweet_likeback_his_last_tweet']))
 
 auth = tweepy.OAuthHandler(api_key, secret_key)
 auth.set_access_token(token, secret_token)

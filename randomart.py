@@ -47,13 +47,15 @@ def post_tweet(gif_arg):
         post = status.danbooru(danbooru_id)
         characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()] #regex to remove everything in brackets
         characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
+        characters = ['{0}'.format(tag.strip()) for tag in characters]
+        characters = set(characters)
         copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
-    if characters != []:
+    if len(characters) != 0:
         tweetxt += '\n' + ', '.join(characters)
     elif config.neural_opt and faces_detected:
         waifus = ''
         for waifu in predictions:
-            if waifu[1] > 0.77:
+            if waifu[1] >= 0.9:
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus

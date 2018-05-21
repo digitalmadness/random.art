@@ -39,12 +39,12 @@ def media(folder,gif_arg):
             media = choice(media_list)
     print('\nopened',media)
 
-    '''run some checks'''
+    '''log and size checks'''
     for element in logger.check_posts(-1*(config.tolerance)):
         if element.split('\t')[1] == media:
             print('pic was already tweeted, trying another file..')
             return '','','retry','',False,0
-    if int(path.getsize(media)) < int(config.discard_size) * 1000:
+    if int(path.getsize(media)) < config.discard_size * 1000:
         print('pic is less than',config.discard_size,'KB, trying another file..')
         return '','','retry','',False,0
 
@@ -57,13 +57,6 @@ def media(folder,gif_arg):
         neural_opt = False
     if neural_opt and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions,faces_detected = moeflow.neuralnetwork(media)
-        #if not faces_detected: #debug
-        #    return '','','retry','',False,0 #debug
-        #if len(predictions) <= 1: #debug
-        #    return '','','retry','',False,0 #debug
-        #for waifu in predictions: #debug
-        #    if waifu[1] < 0.77: #debug
-        #        return '','','retry','',False,0 #debug
 
     '''compress pic and upload it to saucenao.com'''
     thumbSize = (150,150)
@@ -140,7 +133,7 @@ def media(folder,gif_arg):
                     result += 1
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-        return '','','retry','',False,0
+        return media,'','not_art','',False,0
     if int(results['header']['long_remaining'])<1: #could potentially be negative
             print('[saucenao searches limit exceeded]')
             return media,tweetxt,'api_exceeded',predictions,faces_detected,0
@@ -160,15 +153,19 @@ def media(folder,gif_arg):
 
 
 def danbooru(danbooru_id):
+    danbooru_response = ''
     if danbooru_id != 0:
-        client = Danbooru('danbooru')
-        print('\nchecking details on danbooru.donmai.us')
-        try:
-            danbooru_response = client.post_show(danbooru_id)
-            logger.dump(danbooru_response,'last_danbooru_response.txt') #debug
-            return danbooru_response
-        except Exception as e:
-            print(e)
+        while danbooru_response == '':
+            try:
+                client = Danbooru('danbooru')
+                print('\nchecking details on danbooru.donmai.us')
+                '''logger.dump(client.post_show(danbooru_id),'last_danbooru_response.txt') #debug'''
+                return client.post_show(danbooru_id)
+            except Exception as e:
+                print(e)
+                if '130' in e:
+                    print('danbooru is overloaded, sleeping 60s..')
+                    sleep(60)
 
 
 def tweet(tweet_media, tweet_text, api):
