@@ -45,11 +45,12 @@ def post_tweet(gif_arg):
         return post_tweet(gif_arg)  # just try again
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
-        characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()] #regex to remove everything in brackets
-        characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
-        characters = ['{0}'.format(tag.strip()) for tag in characters]
-        characters = set(characters)
-        copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
+        if post != '':
+            characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()] #regex to remove everything in brackets
+            characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
+            characters = ['{0}'.format(tag.strip()) for tag in characters]
+            characters = set(characters)
+            copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
     if len(characters) != 0:
         tweetxt += '\n' + ', '.join(characters)
     elif config.neural_opt and faces_detected:
