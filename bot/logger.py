@@ -1,5 +1,4 @@
 from json import dumps
-import time
 import datetime
 import os
 import wget
@@ -17,7 +16,7 @@ def add_post(img_path, media_state):
         log.write(date + '\t' + str(img_path) + '\t' + str(media_state) + '\n')
 
 
-def check_posts(tolerance):
+def read_posts(tolerance):
     if os.path.isfile(logs_folder + '/randomart_log.txt'):
         already_tweeted = open(logs_folder + '/randomart_log.txt', 'r').readlines()[tolerance:]
     else:
@@ -27,22 +26,34 @@ def check_posts(tolerance):
     return already_tweeted
 
 
-def add_follow(userid):
+def add_followed(userid):
     with open(logs_folder + '/autofollow_log.txt', 'a') as log:
         log.write(str(userid) + '\n')
 
 
-def check_follow():
-    already_followed_array = []
+def read_followed():
     if os.path.isfile(logs_folder + '/autofollow_log.txt'):
         with open(logs_folder + '/autofollow_log.txt', 'r') as log: #get array of users who we followed from log
-            for line in log:
-                if not int(line) in already_followed_array:
-                    already_followed_array.append(int(line))
+            return set(map(int, log))
     else:
         with open(logs_folder + '/autofollow_log.txt', 'a') as log:
             log.write('')
-    return already_followed_array
+        return set([])
+
+
+def add_checked(userid):
+    with open(logs_folder + '/autofollow_checked_log.txt', 'a') as log:
+        log.write(str(userid) + '\n')
+
+
+def read_checked():
+    if os.path.isfile(logs_folder + '/autofollow_checked_log.txt'):
+        with open(logs_folder + '/autofollow_checked_log.txt', 'r') as log: #get array of users who we checked from log
+            return set(map(int, log))
+    else:
+        with open(logs_folder + '/autofollow_checked_log.txt', 'a') as log:
+            log.write('')
+    return set([])
 
 
 def save(text,file):
@@ -73,4 +84,4 @@ def read(file):
 
 
 def fmtime(file):
-    return time.time(),os.path.getmtime(logs_folder + '/' + file)
+    return os.path.getmtime(logs_folder + '/' + file)
