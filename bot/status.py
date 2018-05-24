@@ -40,7 +40,7 @@ def media(folder,gif_arg):
     print('\nopened',media)
 
     '''log and size checks'''
-    for element in logger.check_posts(-1*(config.tolerance)):
+    for element in logger.read_posts(-1*(config.tolerance)):
         if element.split('\t')[1] == media:
             print('pic was already tweeted, trying another file..')
             return '','','retry','',False,0
@@ -153,19 +153,15 @@ def media(folder,gif_arg):
 
 
 def danbooru(danbooru_id):
-    danbooru_response = ''
     if danbooru_id != 0:
-        while danbooru_response == '':
-            try:
-                client = Danbooru('danbooru')
-                print('\nchecking details on danbooru.donmai.us')
-                '''logger.dump(client.post_show(danbooru_id),'last_danbooru_response.txt') #debug'''
-                return client.post_show(danbooru_id)
-            except Exception as e:
-                print(e)
-                if '130' in e:
-                    print('danbooru is overloaded, sleeping 60s..')
-                    sleep(60)
+        print('\nchecking details on danbooru.donmai.us')
+        try:
+            client = Danbooru('danbooru')
+            #logger.dump(client.post_show(danbooru_id),'last_danbooru_response.txt') #debug
+            return client.post_show(danbooru_id)
+        except Exception as e:
+            print(e)
+            return ''
 
 
 def tweet(tweet_media, tweet_text, api):
