@@ -18,18 +18,23 @@ def main():
         gif_arg = args.g
     else:
         gif_arg = False
+    restart_code = False
     while True:
-        if random.random() < config.chance or args.t or gif_arg:
+        if restart_code or random.random() < config.chance or args.t or gif_arg:
             try:
-                post_tweet(gif_arg)
+                restart_code = post_tweet(gif_arg)
             except Exception as eeee:
                 print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
                 sleep(60)
                 main()
-            if args.t or gif_arg:
+            if not restart_code:
+                print('sleeping for',config.interval,'s..')
+                sleep(config.interval)
+            elif args.t or gif_arg:
                 break
-        print('sleeping for',config.interval,'s..')
-        sleep(config.interval)
+        else:
+            print('sleeping for',config.interval,'s..')
+            sleep(config.interval)
 
 
 def post_tweet(gif_arg):
@@ -41,7 +46,7 @@ def post_tweet(gif_arg):
     if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
             logger.add_post(media)
-        return post_tweet(gif_arg)  # just try again
+        return True
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
         if post != '':
@@ -71,7 +76,7 @@ def post_tweet(gif_arg):
                 tweetxt += ' from ' + copyright[0]
         elif copyright != []:
             tweetxt += '\n' + copyright[0]
-    elif copyright != []:
+    elif copyright != [] and copyright[0] != 'original':
         tweetxt += '\n' + copyright[0]
     elif config.neural_opt and faces_detected:
         waifus = ''
@@ -82,6 +87,7 @@ def post_tweet(gif_arg):
             tweetxt += '\n' + waifus
     status.tweet(media, tweetxt, api)
     logger.add_post(media)
+    return False
 
 
 def parse_args(args):
