@@ -38,21 +38,41 @@ def post_tweet(gif_arg):
     copyright = []
     api = config.api
     media,tweetxt,media_state,predictions,faces_detected,danbooru_id = status.media(config.source_folder, gif_arg)
-    tolerance = config.tolerance
     if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
-            logger.add_post(media, media_state)
+            logger.add_post(media)
         return post_tweet(gif_arg)  # just try again
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
         if post != '':
-            characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()] #regex to remove everything in brackets
-            characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
-            characters = ['{0}'.format(tag.strip()) for tag in characters]
-            characters = set(characters)
-            copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in post['tag_string_copyright'].split()] #format source
-    if len(characters) != 0:
-        tweetxt += '\n' + ', '.join(characters)
+            if post['tag_string_character'].split() != []:
+                copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
+            else:
+                copyright = post['tag_string_copyright'].split()
+            if copyright != []:
+                if copyright[0] != 'original':
+                    characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()]
+                else:
+                    characters = post['tag_string_character'].split()
+                copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in copyright] #format source
+                copyright = ['{0}'.format(tag.strip()) for tag in copyright]
+            if characters != []:
+                characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
+                characters = set(['{0}'.format(tag.strip()) for tag in characters])
+    if len(characters) > 0:
+        duplicate_characters = []
+        for tag in characters:
+            if next((True for tag2 in characters if tag in tag2 and tag != tag2), False):
+                duplicate_characters.append(tag)
+        characters = characters - set(duplicate_characters)
+        if len(characters) < 5:
+            tweetxt += '\n' + ', '.join(characters)
+            if copyright != [] and copyright[0] != 'original':
+                tweetxt += ' from ' + copyright[0]
+        elif copyright != []:
+            tweetxt += '\n' + copyright[0]
+    elif copyright != []:
+        tweetxt += '\n' + copyright[0]
     elif config.neural_opt and faces_detected:
         waifus = ''
         for waifu in predictions:
@@ -60,10 +80,8 @@ def post_tweet(gif_arg):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    if copyright != [] and copyright[0] != 'original':
-        tweetxt += ' from ' + copyright[0]
     status.tweet(media, tweetxt, api)
-    logger.add_post(media, media_state)
+    logger.add_post(media)
 
 
 def parse_args(args):
