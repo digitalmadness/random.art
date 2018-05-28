@@ -1,20 +1,20 @@
 from bot import config,logger 
 from neuralnet import face_detect
 import tweepy
-from random import randint,uniform # +146% to sneaking from twatter bot policy
-from time import sleep # +1000% to sneaking
+from random import randint,uniform
 from sys import argv,exit
 from pyfiglet import Figlet
 from argparse import ArgumentParser
 from requests_oauthlib import OAuth1Session
 from os import remove
 import webbrowser
-
-''' this script searches tweets with desired phrase(configure is settings), likes them(optional) and follows author if all checks passed '''
+import time
+import datetime
 
 
 def main():
     '''runs autofollow addon'''
+    steal_arg = argument_parser(argv[1:]).f
     stream_arg = argument_parser(argv[1:]).s
     unfollow_arg = argument_parser(argv[1:]).u
     if stream_arg:
@@ -27,22 +27,25 @@ def main():
     global api
     api = temp_auth(token, secret)
     myid = api.me().id
-    global myname
-    myname = api.me().screen_name 
     followers_array = []
     for page in tweepy.Cursor(api.followers_ids, id=myid).pages():
         followers_array.extend(page)
     logger.save(followers_array,'followers_backup.txt')
-    global following_array
+    followers_array = set(followers_array)
+    if stream_arg:
+        global following_array
+        global myname
+        global liked_tweets_array
+        global already_followed_array
+    myname = api.me().screen_name 
     following_array = []
     for page in tweepy.Cursor(api.friends_ids, id=myid).pages():
         following_array.extend(page)
     print('\nwelcome, @' + myname + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array))
     if stream_arg:
-        global liked_tweets_array
+        following_array = set(following_array)
         liked_tweets_array = []
-        global already_followed_array
-        already_followed_array = logger.check_follow()
+        already_followed_array = logger.read_followed()
         while True:
             try:
                 myStream = tweepy.Stream(auth = api.auth, listener=MyStreamListener())
@@ -51,10 +54,10 @@ def main():
             except Exception as e:
                 print('\n\nsomething fucked up:',e,',\nrestarting..')
     else:
-        if not unfollow_arg:
+        if steal_arg:
+            print('\nstealing followers with > ',config.min_followers)
+        elif not unfollow_arg:
             print('\nsearching for tweets with',config.search_phrase,'and following authors with > ',config.min_followers,'followers')
-        if config.like_opt:
-            print('\nlike every found tweet option enabled!')
         stop_code = 'null'
         following_counter = len(following_array)
         following_now_counter = 0
@@ -66,13 +69,13 @@ def main():
                 else:
                     unfollow_non_mutuals(following_array,followers_array)
                     following_now_counter = 0
-            nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
-            if nowtime - modtime > 14400:
-                logger.save('1','follow_allowed_state.txt')
-            stop_code,following_now_counter = search_new_followers(followers_array, following_counter, config.search_phrase, following_now_counter)
-            if stop_code == 'custom_following_limit_hit':
-                print('mission completion! script will exit now')
-                break
+            if steal_arg:
+                stop_code,following_now_counter = steal_followers(following_array, followers_array, myid, following_counter, following_now_counter)
+            else:
+                stop_code,following_now_counter = search_new_followers(followers_array, following_counter, config.search_phrase, following_now_counter)
+                if stop_code == 'custom_following_limit_hit':
+                    print('mission completion! script will exit now')
+                    break
 
 
 class MyStreamListener(tweepy.StreamListener):
@@ -99,7 +102,7 @@ class MyStreamListener(tweepy.StreamListener):
                                 except AttributeError:
                                     try:
                                         status2.favorite()
-                                        liked_tweets_array.append(status2.id)
+                                        liked_tweets_array.add(status2.id)
                                         print('success')
                                         break
                                     except tweepy.TweepError as e:
@@ -107,7 +110,7 @@ class MyStreamListener(tweepy.StreamListener):
                                             print('\ncode 429 detected! you probably ran out of daily like limit\n\ndisabling likes for now..')
                                             logger.save('0','like_allowed_state.txt')
                                         if '139' in str(e.reason):
-                                            liked_tweets_array.append(status2.id)
+                                            liked_tweets_array.add(status2.id)
                                         else:
                                             print(e.reason)
                                             break
@@ -115,24 +118,24 @@ class MyStreamListener(tweepy.StreamListener):
                                 print('only retweets so no like for them')
                                 break
                 except tweepy.TweepError as e:
-                    print('error while trying to get',username,'tweets!\n',e.reason)
-            if logger.read('follow_allowed_state.txt') == '1' and not userid in already_followed_array and screenname != myname:
+                    print(e.reason)
+            elif logger.read('follow_allowed_state.txt') == '1' and not userid in already_followed_array and screenname != myname:
                 try:
                     api.create_friendship(userid)
                     print('followed',username)
-                    following_array.append(userid)
-                    already_followed_array.append(userid)
-                    logger.add_follow(userid)
+                    following_array.add(userid)
+                    already_followed_array.add(userid)
+                    logger.add_followed(userid)
                 except tweepy.TweepError as e:
-                    print('\ntweepy error!\n' + e.reason)
+                    print(e.reason)
                     if '161' in str(e.reason):
-                        print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\ndisabling followback for now..')
+                        print('\ncode 161 detected! you probably ran out of daily following limit\n\ndisabling followback for now..')
                         logger.save('0','follow_allowed_state.txt')
         if config.instafollowback_opt and status.event == 'follow':
             if not userid in following_array and not userid in already_followed_array and screenname != myname:
                 api.create_friendship(userid)
                 print('followback',username)
-        '''logger.dump(status._json, 'last_streaming_event.txt') #debug'''
+        #logger.dump(status._json, 'last_streaming_event.txt') #debug
 
 
 def search_new_followers(followers_array, following_counter, search_phrase, following_now_counter):
@@ -140,83 +143,170 @@ def search_new_followers(followers_array, following_counter, search_phrase, foll
     update_states()
     if logger.read('follow_allowed_state.txt') == '0':
         print('\nfollowing temporarily not allowed! sleeping 5 min..')
-        sleep(300)
+        time.sleep(300)
         return 'restart', following_now_counter
-    print('\nstarting following cycle..')
-    sleep_time_long = randint(18000,36000)
     already_checked_array = []
-    already_followed_array = logger.check_follow()
+    already_followed_array = logger.read_followed()
     for status in tweepy.Cursor(api.search, q=search_phrase).items():
         if following_counter >= config.custom_following_limit:
                 return 'custom_following_limit_hit', following_now_counter
-        sleep_time = uniform(1,2.5)
-        if following_counter > 5000:
-            if following_counter >= len(followers_array) + randint(4888,5000):
-                print('\nfollowing cycle stopped, you are too close to twitter following hardlimit:',len(followers_array),'\nsleeping',sleep_time,'sec..\n')
-                sleep(sleep_time)
-                return 'following_hardlimit_hit',following_now_counter
-            elif len(followers_array) <= 5000:
-                print('\nfollowing cycle stopped, you are too close to twitter following hardlimit: 5000\nsleeping',sleep_time,'sec..\n')
-                sleep(sleep_time)
-                return 'following_hardlimit_hit',following_now_counter
+        elif following_counter >= len(followers_array) + randint(4888,5000):
+            sleep_time = randint(18000,36000)
+            print('\nfollowing cycle stopped, following hardlimit hit:',len(followers_array),'\nsleeping',sleep_time,'sec..\n')
+            time.sleep(sleep_time)
+            return 'following_hardlimit_hit',following_now_counter
+        elif following_counter >= 4999 and len(followers_array) < 4999:
+            sleep_time = randint(18000,36000)
+            print('\nfollowing cycle stopped, following hardlimit hit: 5000\nsleeping',sleep_time,'sec..\n')
+            time.sleep(sleep_time)
+            return 'following_hardlimit_hit',following_now_counter
         try:
             userid = status.user.id
             username = '@'+status.user.screen_name
-            print('\nfound tweet by',status.user.name)
             if userid in followers_array and not config.followback_opt:
-                print(username,'already follows us..')
+                print('\n',username,'already follows us..')
+            elif userid in already_followed_array:
+                print('\nalready tried to follow',username,'in the past..')
+            elif status.user.following:
+                print('\nalready following',username,'(not by script)..')
             else:
-                if userid in already_followed_array:
-                    print('already tried to follow',username,'in the past..')
+                userid_followers_count = status.user.followers_count
+                userid_following_count = status.user.friends_count
+                if userid_following_count < userid_followers_count - userid_followers_count*0.1:
+                    print('\n',username,'doesnt seems like mutual')
+                elif userid_followers_count < config.min_followers:
+                    print('\n',username,'doesnt have enough followers')
+                elif userid_following_count > 200 and userid_following_count > 2*userid_followers_count:
+                    print('\n',username,'follows more than 2x his followers')
+                elif status.user.default_profile_image or status.user.default_profile:
+                    print('\n',username,'not customized profile')
                 else:
-                    if status.user.following:
-                        print('already following',username,'(not by script)..')
+                    profile_pic = logger.save_profile_pic(status.user.profile_image_url_https.replace('_normal',''))
+                    if not config.anime_avi_opt or face_detect.run_face_detection(profile_pic): #detect anime avi
+                        status.user.follow()
+                        following_now_counter += 1
+                        following_counter += 1
+                        if not userid in already_followed_array:
+                            already_followed_array.add(userid)
+                            logger.add_followed(userid)
+                        sleep_time = uniform(1,2.5)
+                        print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
+                        time.sleep(sleep_time)
                     else:
-                        dood_followers_count = status.user.followers_count
-                        dood_following_count = status.user.friends_count
-                        if dood_following_count > dood_followers_count - dood_followers_count*0.1 and dood_following_count < 2*dood_followers_count and dood_followers_count > config.min_followers and not status.user.default_profile_image and not status.user.default_profile:
-                            profile_pic = logger.save_profile_pic(status.user.profile_image_url_https.replace('_normal',''))
-                            if not config.anime_avi_opt or face_detect.run_face_detection(profile_pic): #detect anime avi
-                                status.user.follow()
-                                following_now_counter += 1
-                                following_counter += 1
-                                if not userid in already_followed_array:
-                                    already_followed_array.append(userid)
-                                    logger.add_follow(userid)
-                                print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
-                            else:
-                                print('\n',username,'avi doesnt seems like anime')
-                            try:
-                                remove(profile_pic)
-                            except Exception:
-                                pass
-                            if config.like_opt and logger.read('like_allowed_state.txt') == '1':
-                                status.favorite()
-                                print('liked this tweet')
-                            sleep(sleep_time)
-                        else:
-                            if dood_following_count < dood_followers_count - dood_followers_count*0.1:
-                                print(username,'doesnt seems like mutual')
-                            if dood_followers_count < config.min_followers:
-                                print(username,'doesnt have enough followers')
-                            if status.user.default_profile_image or status.user.default_profile:
-                                print(username,'not customized profile')
-                            if dood_following_count > 2*dood_followers_count:
-                                print(username,'follows more than 2x his followers')
+                        print('\n',username,'avi doesnt seems like anime')
+                    try:
+                        remove(profile_pic)
+                    except Exception:
+                        pass
+                    if config.like_opt and logger.read('like_allowed_state.txt') == '1':
+                        status.favorite()
+                        print('liked this tweet')
+                    time.sleep(sleep_time)
         except tweepy.TweepError as e:
-            print('\ntweepy error!\n' + e.reason)
+            print(e.reason)
             if '161' in str(e.reason):
-                print('\ncode 161 detected! you probably ran out of daily following limit\n\ndo not try to follow more people now or u might get banned!\n\nwaiting',sleep_time_long,'sec before next try..')
+                sleep_time = randint(18000,36000)
+                print('\ncode 161 detected! you probably ran out of daily following limit\n\nsleeping',sleep_time,'sec before next try..')
                 logger.save('0','follow_allowed_state.txt')
-                sleep(sleep_time_long)
+                time.sleep(sleep_time)
                 return 'restart', following_now_counter
         except StopIteration:
             print('\nwe searched all tweets, sleeping 5 minutes before next try..')
-            sleep(300)
+            time.sleep(300)
             return 'restart', following_now_counter
-        already_checked_array.append(userid)
+        already_checked_array.add(userid)
     print('following cycle crashed for some reason, restarting in',sleep_time,'sec')
-    sleep(sleep_time)
+    time.sleep(sleep_time)
+    return 'restart', following_now_counter
+
+
+def steal_followers(following_array, followers_array, myid, following_counter, following_now_counter):
+    '''follows people who follow your target'''
+    update_states()
+    if logger.read('follow_allowed_state.txt') == '0':
+        print('\nfollowing temporarily not allowed! sleeping 5 min..')
+        time.sleep(300)
+        return 'restart', following_now_counter
+    following_array = set(following_array)
+    already_checked_array = logger.read_checked()
+    already_followed_array = logger.read_followed()
+    target_followers_array = []
+    for page in tweepy.Cursor(api.followers_ids, id=input('\nenter username whom followers you wanna steal (without @): ')).pages():
+        target_followers_array.extend(page)
+        if len(target_followers_array) > 9000:
+            break
+    for userid in target_followers_array:
+        if following_counter >= config.custom_following_limit:
+            return 'custom_following_limit_hit', following_now_counter
+        elif following_counter >= len(followers_array) + randint(4888,5000):
+            sleep_time = randint(18000,36000)
+            print('\nfollowing cycle stopped, following hardlimit hit:',len(followers_array),'\nsleeping',sleep_time,'sec..\n')
+            time.sleep(sleep_time)
+            return 'following_hardlimit_hit',following_now_counter
+        elif following_counter >= 4999 and len(followers_array) < 4999:
+            sleep_time = randint(18000,36000)
+            print('\nfollowing cycle stopped, following hardlimit hit: 5000\nsleeping',sleep_time,'sec..\n')
+            time.sleep(sleep_time)
+            return 'following_hardlimit_hit',following_now_counter
+        followed_state = False
+        if userid in already_checked_array:
+            print('already checked userid:',userid,'\n')
+        elif userid in already_followed_array:
+            print('already tried to follow userid:',userid,'\n')
+            followed_state = True
+        elif userid in following_array:
+            print('already following userid:',userid,'\n')
+        elif not config.followback_opt and userid in followers_array:
+            print('userid already follows us:',userid,'\n')
+        else:
+            try:
+                user = api.get_user(userid)
+                userid_followers_count = user.followers_count
+                userid_following_count = user.friends_count
+                if userid_following_count < userid_followers_count - userid_followers_count*0.1:
+                        print(user.screen_name,'doesnt seems like mutual\n')
+                elif userid_followers_count < config.min_followers:
+                    print(user.screen_name,'doesnt have enough followers\n')
+                elif userid_following_count > 200 and userid_following_count > 3*userid_followers_count:
+                    print(user.screen_name,'follows more than 3x his followers\n')
+                elif user.default_profile_image or user.default_profile:
+                    print(user.screen_name,'not customized profile\n')
+                elif user.protected:
+                    print(user.screen_name,'locked his account\n')
+                else:
+                    try:
+                        for status2 in tweepy.Cursor(api.user_timeline,id=userid).items():
+                            if time.mktime(datetime.datetime.strptime(str(status2.created_at), '%Y-%m-%d %H:%M:%S').timetuple()) < time.time() - 24*60*60:
+                                print(user.screen_name,'is inactive\n')
+                            else:
+                                try:
+                                    user.follow()
+                                    following_counter += 1
+                                    following_now_counter += 1
+                                    if not userid in already_followed_array:
+                                        already_followed_array.add(userid)
+                                        logger.add_followed(userid)
+                                    followed_state = True
+                                    sleep_time = uniform(1,2.5)
+                                    print('followed',user.screen_name,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..\n')
+                                    time.sleep(sleep_time)
+                                except tweepy.TweepError as e:
+                                    print(e.reason)
+                                    if '161' in str(e.reason):
+                                        logger.save('0','follow_allowed_state.txt')
+                                        sleep_time = randint(18000,36000)
+                                        print('\ncode 161 detected! you probably ran out of daily following limit\n\nsleeping',sleep_time,'sec before next try..')
+                                        time.sleep(sleep_time)
+                            break
+                    except tweepy.TweepError as e:
+                        print(e.reason)
+            except tweepy.TweepError as e:
+                if '63' in str(e.reason):
+                    print('user was banned')
+        if not followed_state:
+            already_checked_array.add(userid)
+            logger.add_checked(userid)
+    print('successfully checked',len(target_followers_array),'users and followed',following_now_counter,'of them')
     return 'restart', following_now_counter
 
 
@@ -227,32 +317,35 @@ def unfollow_non_mutuals(following_array,followers_array):
     print('\nstarting unfollowing cycle, lets clean some space for new people..\n')
     if not config.unfollow_nofilter_opt:
         print('no worries, it will unfollow only non mutuals followed by this script from oldest to newest\n')
-    already_followed_array = logger.check_follow()
+    already_followed_array = logger.read_followed()
     unfollowing_candidates = []
-    for dood in reversed(following_array):
-        if not dood in followers_array:
-            if config.unfollow_nofilter_opt or dood in already_followed_array:
-                unfollowing_candidates.append(dood)
+    for userid in reversed(following_array):
+        if not userid in followers_array:
+            if config.unfollow_nofilter_opt or userid in already_followed_array:
+                unfollowing_candidates.append(userid)
     print(len(unfollowing_candidates),'candidates for unfollow found\n')
-    for unfollowed_count,dood in enumerate(unfollowing_candidates, 1):
+    for unfollowed_count,userid in enumerate(unfollowing_candidates, 1):
         sleep_time = uniform(0.2,1)
-        print('user id',dood, 'didnt follow back')
-        api.destroy_friendship(id=dood)
-        if config.unfollow_nofilter_opt and not dood in already_followed_array:
-            logger.add_follow(dood)
+        print('user id',userid, 'didnt follow back')
+        try:
+            api.destroy_friendship(id=userid)
+        except tweepy.TweepError as e:
+            print(e.reason)
+        if config.unfollow_nofilter_opt and not userid in already_followed_array:
+            logger.add_followed(userid)
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
-        sleep(sleep_time)
+        time.sleep(sleep_time)
         if unfollowed_count > len(unfollowing_candidates)-1000 or unfollowed_count >= config.custom_unfollowing_limit:
-            sleep_time_long = randint(3600,7200)
-            print('\nunfollowing cycle stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time_long,'sec before another following cycle to avoid detection..\n')
-            sleep(sleep_time_long)
+            sleep_time = randint(3600,7200)
+            print('\nunfollowing cycle stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time,'sec before another following cycle to avoid detection..\n')
+            time.sleep(sleep_time)
             break
 
 
 def get_tokens():
-    '''get temp oauth tokens using twicca api keys'''
-    consumer_key = '7S2l5rQTuFCj4YJpF7xuTQ'
-    consumer_secret = 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4'
+    '''get temp oauth tokens using ripped off api keys'''
+    consumer_key = 'yqoymTNrS9ZDGsBnlFhIuw'
+    consumer_secret = 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs'
     REQUEST_TOKEN_URL = 'https://api.twitter.com/oauth/request_token'
     ACCESS_TOKEN_URL = 'https://api.twitter.com/oauth/access_token'
     AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
@@ -278,24 +371,24 @@ def get_tokens():
 
 def temp_auth(token,token_secret):
     '''set api with temp oauth tokens'''
-    auth = tweepy.OAuthHandler('7S2l5rQTuFCj4YJpF7xuTQ', 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4')
+    auth = tweepy.OAuthHandler('yqoymTNrS9ZDGsBnlFhIuw', 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs')
     auth.set_access_token(token,token_secret)
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
     return api
 
 
 def update_states():
-    nowtime,modtime = logger.fmtime('like_allowed_state.txt')
-    if nowtime - modtime > 3600:
+    '''check follow/like cooldown'''
+    if time.time() - logger.fmtime('like_allowed_state.txt') > 3600:
         logger.save('1','like_allowed_state.txt')
-    nowtime,modtime = logger.fmtime('follow_allowed_state.txt')
-    if nowtime - modtime > 14400:
+    if time.time() - logger.fmtime('follow_allowed_state.txt') > 14400:
         logger.save('1','follow_allowed_state.txt')
 
 
 def argument_parser(args):
     '''parse CLI arguments'''
     parser = ArgumentParser()
+    parser.add_argument('-f', help='steal followers from other accounts',action='store_true')
     parser.add_argument('-s', help='streaming mode which enables instant likefollowback!',action='store_true')
     parser.add_argument('-u', help='clear some space before following',action='store_true')
     return parser.parse_args(args)
