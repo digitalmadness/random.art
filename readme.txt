@@ -12,6 +12,9 @@
 |    git clone https://github.com/exife/random.art                    |
 |    sudo apt-get update && sudo apt-get install python3 python3-pip  |
 |    sudo pip3 install pillow pyfiglet pybooru tweepy wget            |
+|    wget https://raw.githubusercontent.com/braian87b/tweepy/master/tweepy/api.py
+|    sudo mv api.py  /usr/local/lib/python3.5/dist-packages/tweepy    |
+|    sudo chmod -R 777 /usr/local/lib/python3.5/dist-packages/tweepy/api.py
 | (2)enter twitter api keys, path to folder with pics in settings.txt |
 |    (howto get them: https://gist.github.com/clayadavis/5681622 )    |
 | (3)enter api key from https://saucenao.com/user.php?page=search-api |

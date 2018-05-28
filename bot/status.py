@@ -86,7 +86,7 @@ def media(folder,gif_arg):
         results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
         if int(results['header']['user_id'])>0:
             #api responded
-            print('\nremaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
+            print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
             #General issue, api did not respond. Normal site took over for this error state.
             return '','','retry','',False,0
@@ -165,10 +165,13 @@ def danbooru(danbooru_id):
 
 def tweet(tweet_media, tweet_text, api):
     '''sends tweet command to Tweepy'''
-    api.update_with_media(
-        filename=tweet_media,
+    print('\nuploading pic to twitter..')
+    upload_result = api.media_upload(tweet_media)
+    print('sending tweet..')
+    api.update_status(
+        media_ids=[upload_result.media_id_string],
         status=tweet_text)
-    print('\ntweet sent!')
+    print('ok!')
 
 
 def welcome():
