@@ -1,29 +1,28 @@
 from json import dumps
-import datetime
 import os
 import wget
 
 """who needs standart libs anyway"""
 
-date = str(datetime.datetime.now())
 logs_folder = str(os.path.dirname(os.path.abspath(__file__))).replace('/bot','/logs')
 if not os.path.exists(logs_folder):
     os.makedirs(logs_folder)
 
 
-def add_post(img_path, media_state):
+def add_post(img_path):
     with open(logs_folder + '/randomart_log.txt', 'a') as log:
-        log.write(date + '\t' + str(img_path) + '\t' + str(media_state) + '\n')
+        log.write(str(img_path) + '\n')
 
 
-def read_posts(tolerance):
+def read_posts():
     if os.path.isfile(logs_folder + '/randomart_log.txt'):
-        already_tweeted = open(logs_folder + '/randomart_log.txt', 'r').readlines()[tolerance:]
+        with open(logs_folder + '/randomart_log.txt', 'r') as log:
+            return [line.rstrip('\n') for line in log]
     else:
-        already_tweeted = []
         with open(logs_folder + '/randomart_log.txt', 'a') as log:
             log.write('')
-    return already_tweeted
+        return []
+
 
 
 def add_followed(userid):

@@ -40,10 +40,9 @@ def media(folder,gif_arg):
     print('\nopened',media)
 
     '''log and size checks'''
-    for element in logger.read_posts(-1*(config.tolerance)):
-        if element.split('\t')[1] == media:
-            print('pic was already tweeted, trying another file..')
-            return '','','retry','',False,0
+    if media in set(logger.read_posts()):
+        print('pic was already tweeted, trying another file..')
+        return '','','retry','',False,0
     if int(path.getsize(media)) < config.discard_size * 1000:
         print('pic is less than',config.discard_size,'KB, trying another file..')
         return '','','retry','',False,0

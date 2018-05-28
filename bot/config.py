@@ -20,7 +20,6 @@ token = twitter_config['token']
 secret_token = twitter_config['secret_token']
 source_folder = app_config['image_folder']
 discard_size = int(app_config['discard_pic_if_less_than_x_kilobytes'])
-tolerance = int(app_config['allow_repeat_after'])
 chance = float(app_config['execution_chance'])
 interval = int(app_config['time_between_tweets'])
 min_followers = int(autofollow_config['minimum_followers_to_consider'])
