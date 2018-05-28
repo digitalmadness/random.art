@@ -1,6 +1,6 @@
 from bot import config,logger
 from sys import exit
-from os import path,walk
+from os import path,walk,listdir,unlink,rmdir
 from requests import post
 from json import JSONDecoder
 from io import BytesIO
@@ -11,8 +11,7 @@ from time import sleep
 from collections import OrderedDict
 from pyfiglet import Figlet
 from pybooru import Danbooru,Moebooru
-
-'''handles statuses from bot, neural network, reverse searches pics and makes sure it doesn't post anything repeated or not found on saucenao'''
+from subprocess import call
 
 
 def media(folder,gif_arg):
@@ -42,10 +41,12 @@ def media(folder,gif_arg):
     '''log and size checks'''
     if media in set(logger.read_posts()):
         print('pic was already tweeted, trying another file..')
-        return '','','retry','',False,0
-    if int(path.getsize(media)) < config.discard_size * 1000:
+        return '','','retry','',False,0,'',''
+    media_size = int(path.getsize(media))
+    if media_size < config.discard_size * 1000:
         print('pic is less than',config.discard_size,'KB, trying another file..')
-        return '','','retry','',False,0
+        return '','','retry','',False,0,'',''
+    media_bak = media
 
     '''run neural network'''
     try:
@@ -70,14 +71,14 @@ def media(folder,gif_arg):
         r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
     except Exception as e:
         print(e)
-        return media,'','api_na','',faces_detected,0
+        return media,'','api_na','',faces_detected,0,'',media_bak
     if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
         if r.status_code == 403:
             print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
             sleep(60*60*24)
         elif r.status_code == 429:
             print('saucenao.com api requests limit exceeded!')
-            return media,'','api_key_error','',faces_detected,0
+            return media,'','api_key_error','',faces_detected,0,'',media_bak
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
     else:
@@ -89,7 +90,7 @@ def media(folder,gif_arg):
             print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
             #General issue, api did not respond. Normal site took over for this error state.
-            return '','','retry','',False,0
+            return '','','retry','',False,0,'',''
 
     '''check pic parameters in saucenao.com response'''
     if float(results['results'][0]['header']['similarity']) > minsim:
@@ -113,33 +114,50 @@ def media(folder,gif_arg):
                 pixiv_id=results['results'][0]['data']['pixiv_id']
                 member_name=results['results'][0]['data']['member_name']
                 title=results['results'][0]['data']['title']
-            else:
-                result = 0
-                while pixiv_id == 0 and result < 10:
-                    try:
-                        if float(results['results'][result]['header']['similarity']) > minsim:
-                            pixiv_id=results['results'][result]['data']['pixiv_id']
-                    except Exception:
-                        pass
-                    result += 1
-                result = 0
-                while ext_urls == [] and result < 10:
-                    try:
-                        if float(results['results'][result]['header']['similarity']) > minsim:
-                            ext_urls=results['results'][result]['data']['ext_urls']
-                    except Exception:
-                        pass
-                    result += 1
+            result = 0
+            while pixiv_id == 0 and result < 10:
+                try:
+                    if float(results['results'][result]['header']['similarity']) > minsim:
+                        pixiv_id=results['results'][result]['data']['pixiv_id']
+                except Exception:
+                    pass
+                result += 1
+            result = 0
+            while result < 10:
+                try:
+                    if float(results['results'][result]['header']['similarity']) > minsim:
+                        ext_urls = results['results'][result]['data']['ext_urls']
+                except Exception:
+                    pass
+                result += 1
+        if ext_urls != []:
+            print('\ntrying to download better quality pic..')
+            for url in ext_urls:
+                if not 'pixiv' in url:
+                    call(['image-scraper',url])
+                    if find_temp_media_folder != '':
+                        break
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-        return media,'','not_art','',False,0
+        return media,'','not_art','',False,0,'',media_bak
     if int(results['header']['long_remaining'])<1: #could potentially be negative
             print('[saucenao searches limit exceeded]')
-            return media,tweetxt,'api_exceeded',predictions,faces_detected,0
+            return media,tweetxt,'api_exceeded',predictions,faces_detected,0,'',media_bak
     if int(results['header']['short_remaining'])<1:
             print('out of searches for this 30 second period. sleeping for 25 seconds...')
             sleep(25)
-            return '','','retry','',False,0
+            return '','','retry','',False,0,'',''
+
+    '''check if downloaded pic quality is better'''
+    temp_img_folder = find_temp_media_folder()
+    find_biggest(temp_img_folder)
+    if biggest[1] != -1 and biggest[1] > media_size:
+        media = biggest[0]
+        print('found better quality pic, using', media)
+    elif media_size < 100000:
+        print('low quality, trying another pic..')
+        return '','','retry','',False,0,'',''
+
 
     '''generate tweet text based on that parameters'''
     if pixiv_id != 0:
@@ -148,10 +166,43 @@ def media(folder,gif_arg):
         tweetxt = str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time) + '\n[' + ext_urls[0] + ']'
     elif ext_urls != []:
         tweetxt = '[' + ext_urls[0] + ']'
-    return media,tweetxt,'art',predictions,faces_detected,danbooru_id
+    return media,tweetxt,'art',predictions,faces_detected,danbooru_id,temp_img_folder,media_bak
+
+
+def find_biggest(dir):
+    global biggest
+    biggest = ('', -1)
+    for item in listdir(dir):
+        item = dir + '/' + item
+        if path.isdir(item):
+            find_biggest(item)
+        else:
+            itemsize = path.getsize(item)
+            if itemsize > biggest[1]:
+                biggest = (item, itemsize)
+
+
+def find_temp_media_folder():
+    work_dir = str(path.dirname(path.abspath(__file__)))
+    for file in listdir(work_dir.replace('/bot','')):
+        if 'images' in file:
+            return work_dir.replace('/bot','/'+file)
+    return ''
+
+
+def cleanup(temp_img_folder):
+    for file in listdir(temp_img_folder):
+        file_path = path.join(temp_img_folder, file)
+        try:
+            if path.isfile(file_path):
+                unlink(file_path)
+        except Exception as e:
+            print(e)
+    rmdir(temp_img_folder)
 
 
 def danbooru(danbooru_id):
+    '''returns danbooru post using id'''
     if danbooru_id != 0:
         print('\nchecking details on danbooru.donmai.us')
         try:
@@ -165,7 +216,7 @@ def danbooru(danbooru_id):
 
 def tweet(tweet_media, tweet_text, api):
     '''sends tweet command to Tweepy'''
-    print('\nuploading pic to twitter..')
+    print('uploading pic to twitter..')
     upload_result = api.media_upload(tweet_media)
     print('sending tweet..')
     api.update_status(
@@ -175,6 +226,9 @@ def tweet(tweet_media, tweet_text, api):
 
 
 def welcome():
+    temp_img_folder = find_temp_media_folder()
+    if temp_img_folder != '':
+        cleanup(temp_img_folder)
     '''startup message'''
     print(Figlet(font='slant').renderText('''randomartv5'''),'\nlogging in..\n')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
