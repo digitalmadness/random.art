@@ -1,6 +1,6 @@
 from bot import config,logger,status
 from argparse import ArgumentParser
-from sys import argv
+from sys import argv,exit
 from time import sleep
 from re import sub
 import random
@@ -14,24 +14,20 @@ def main():
     api = config.api
     status.welcome()
     args = parse_args(argv[1:])
-    if args.g:
-        gif_arg = args.g
-    else:
-        gif_arg = False
     restart_code = False
     while True:
-        if restart_code or random.random() < config.chance or args.t or gif_arg:
+        if restart_code or random.random() < config.chance or args.t or args.g:
             try:
-                restart_code = post_tweet(gif_arg)
+                restart_code = post_tweet(args.g)
             except Exception as eeee:
                 print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
                 sleep(60)
                 main()
             if not restart_code:
+                if args.t or args.g:
+                    exit()
                 print('sleeping for',config.interval,'s..')
                 sleep(config.interval)
-            elif args.t or gif_arg:
-                break
         else:
             print('sleeping for',config.interval,'s..')
             sleep(config.interval)
@@ -42,10 +38,10 @@ def post_tweet(gif_arg):
     characters = []
     copyright = []
     api = config.api
-    media,tweetxt,media_state,predictions,faces_detected,danbooru_id = status.media(config.source_folder, gif_arg)
+    media,tweetxt,media_state,predictions,faces_detected,danbooru_id,temp_img_folder,media_bak = status.media(config.source_folder, gif_arg)
     if media_state == 'retry' or media_state == 'not_art':
         if media_state == 'not_art':
-            logger.add_post(media)
+            logger.add_post(media_bak)
         return True
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
@@ -86,7 +82,8 @@ def post_tweet(gif_arg):
         if waifus != '':
             tweetxt += '\n' + waifus
     status.tweet(media, tweetxt, api)
-    logger.add_post(media)
+    status.cleanup(temp_img_folder)
+    logger.add_post(media_bak)
     return False
 
 
