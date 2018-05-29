@@ -53,7 +53,7 @@ def media(folder,gif_arg):
         import moeflow
         neural_opt = config.neural_opt
     except Exception as e:
-        print(e,'\nneural network is not configured!')
+        print(e,'\nneural network not avaliable! some functions are limited :<')
         neural_opt = False
     if neural_opt and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
         predictions,faces_detected = moeflow.neuralnetwork(media)
@@ -135,8 +135,14 @@ def media(folder,gif_arg):
             for url in ext_urls:
                 if not 'pixiv' in url:
                     call(['image-scraper',url])
-                    if find_temp_media_folder != '':
+                    try:
+                        temp_img_folder = find_temp_media_folder()
+                        find_biggest(temp_img_folder)
                         break
+                    except Exception as e:
+                        if temp_img_folder != '':
+                            cleanup(temp_img_folder)
+                        print(e)
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
         return media,'','not_art','',False,0,'',media_bak
@@ -149,8 +155,6 @@ def media(folder,gif_arg):
             return '','','retry','',False,0,'',''
 
     '''check if downloaded pic quality is better'''
-    temp_img_folder = find_temp_media_folder()
-    find_biggest(temp_img_folder)
     if biggest[1] != -1 and biggest[1] > media_size:
         media = biggest[0]
         print('found better quality pic, using', media)
@@ -170,6 +174,7 @@ def media(folder,gif_arg):
 
 
 def find_biggest(dir):
+    '''filters real pic from all trash on webpage'''
     global biggest
     biggest = ('', -1)
     for item in listdir(dir):
@@ -230,9 +235,9 @@ def welcome():
     if temp_img_folder != '':
         cleanup(temp_img_folder)
     '''startup message'''
-    print(Figlet(font='slant').renderText('''randomartv5'''),'\nlogging in..\n')
+    print(Figlet(font='slant').renderText('''randomart'''),'\nv6 | logging in..\n')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
-        exit('you forgot to replace default pictures folder in settings.txt!')
+        exit('baka! edit settings.txt first')
     api = config.api
     myid = api.me()
     print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance*100, '% chance..')
