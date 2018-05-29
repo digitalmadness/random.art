@@ -20,9 +20,9 @@ def main():
             try:
                 restart_code = post_tweet(args.g)
             except Exception as eeee:
+                restart_code = True
                 print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
                 sleep(60)
-                main()
             if not restart_code:
                 if args.t or args.g:
                     exit()
