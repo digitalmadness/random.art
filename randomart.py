@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from sys import argv,exit
 from time import sleep
 from re import sub
+import tweepy
 import random
 
 '''uses all other modules to post tweets if chance is met'''
@@ -10,42 +11,57 @@ import random
 
 def main():
     '''runs the whole program'''
-    global api  #it's used absolutely everywhere so might as well be global
-    api = config.api
-    status.welcome()
     args = parse_args(argv[1:])
-    restart_code = False
+    crashed = False
+    global api
+    if args.a:
+        auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
+        auth1.set_access_token(config.token, config.secret_token)
+        auth2 = tweepy.OAuthHandler(config.api_key_alt, config.secret_key_alt)
+        auth2.set_access_token(config.token_alt, config.secret_token_alt)
+    else:
+        auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
+        auth1.set_access_token(config.token, config.secret_token)
+    status.welcome()
+    alt = args.a
     while True:
-        if restart_code or random.random() < config.chance or args.t or args.g:
-            try:
-                restart_code = post_tweet(args.g)
-            except Exception as eeee:
-                restart_code = True
-                print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
-                sleep(60)
-            if not restart_code:
-                if args.t or args.g:
-                    exit()
-                print('sleeping for',config.interval,'s..')
-                sleep(config.interval)
-        else:
-            print('sleeping for',config.interval,'s..')
-            sleep(config.interval)
+        try:
+            if args.a and not crashed:
+                alt = not alt
+            if alt:
+                api = tweepy.API(auth2, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+            else:
+                api = tweepy.API(auth1, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+            post_tweet(args.g, alt)
+            crashed = False
+        except Exception as eeee:
+            crashed = True
+            print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
+            sleep(60)
+            status.welcome()
+        
 
-
-def post_tweet(gif_arg):
+def post_tweet(gif, alt):
     '''check media state and send tweet'''
+    media_state = ''
+    proxify = False
     characters = []
     copyright = []
-    api = config.api
-    media,tweetxt,media_state,predictions,faces_detected,danbooru_id,temp_img_folder,media_bak = status.media(config.source_folder, gif_arg)
-    if media_state == 'retry' or media_state == 'not_art':
+    while media_state != 'art':
+        media,tweetxt,media_state,predictions,faces_detected,danbooru_id,temp_img_folder,media_bak = status.media(gif, alt, proxify)
         if media_state == 'not_art':
             logger.add_post(media_bak)
-        return True
+        elif media_state == 'api_exceeded':
+            proxify = True
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
         if post != '':
+            if alt and post['rating'] == 's':
+                print('rating is unacceptable:',post['rating'],'trying another pic..')
+                return True
+            elif not alt and post['rating'] == 'e':
+                print('rating is unacceptable:',post['rating'],'trying another pic..')
+                return True
             if post['tag_string_character'].split() != []:
                 copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
             else:
@@ -81,17 +97,18 @@ def post_tweet(gif_arg):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    status.tweet(media, tweetxt, api)
+    status.tweet(media, tweetxt, api, api.me())
     status.cleanup(temp_img_folder)
     logger.add_post(media_bak)
-    return False
+    print('sleeping for',config.interval,'s..')
+    sleep(config.interval)
 
 
 def parse_args(args):
     '''parsing arguments from command line'''
     parser = ArgumentParser()
-    parser.add_argument('-t', help='force tweet and exit', action='store_true')
-    parser.add_argument('-g', help='force tweet GIF and exit', action='store_true')
+    parser.add_argument('-a', help='use alt account', action='store_true')
+    parser.add_argument('-g', help='tweet gifs only', action='store_true')
     return parser.parse_args(args)
 
 

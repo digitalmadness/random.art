@@ -14,7 +14,7 @@ from pybooru import Danbooru,Moebooru
 from subprocess import call
 
 
-def media(folder,gif_arg):
+def media(gif,alt,proxify):
     '''set vars and pick random image from folder'''
     faces_detected = False
     media = ''
@@ -27,10 +27,14 @@ def media(folder,gif_arg):
     tweetxt = ''
     ext_urls = []
     est_time = ''
-    minsim=77
+    minsim = 70
     predictions = []
-    media_list = glob(folder + '*')
-    if gif_arg:
+    biggest = ('', -1)
+    if alt:
+        media_list = glob(config.source_folder_alt + '*')
+    else:
+        media_list = glob(config.source_folder + '*')
+    if gif:
         while not media.lower().endswith(('gif')):
             media = choice(media_list)
     else:
@@ -68,17 +72,19 @@ def media(folder,gif_arg):
     imageData.close()
     print('\nsending pic to saucenao.com')
     try:
-        r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
+        if proxify:
+            r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.alt_key_saucenao, files=files, timeout=60, proxies={'http': config.proxy,  'https': config.proxy})
+        else:
+            r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
     except Exception as e:
         print(e)
         return media,'','api_na','',faces_detected,0,'',media_bak
     if r.status_code != 200: #generally non 200 statuses are due to either overloaded servers, the user being out of searches 429, or bad api key 403
         if r.status_code == 403:
-            print('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
-            sleep(60*60*24)
+            exit('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
         elif r.status_code == 429:
             print('saucenao.com api requests limit exceeded!')
-            return media,'','api_key_error','',faces_detected,0,'',media_bak
+            return '','','api_exceeded','',False,0,'',''
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
     else:
@@ -89,7 +95,6 @@ def media(folder,gif_arg):
             #api responded
             print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
-            #General issue, api did not respond. Normal site took over for this error state.
             return '','','retry','',False,0,'',''
 
     '''check pic parameters in saucenao.com response'''
@@ -146,9 +151,6 @@ def media(folder,gif_arg):
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
         return media,'','not_art','',False,0,'',media_bak
-    if int(results['header']['long_remaining'])<1: #could potentially be negative
-            print('[saucenao searches limit exceeded]')
-            return media,tweetxt,'api_exceeded',predictions,faces_detected,0,'',media_bak
     if int(results['header']['short_remaining'])<1:
             print('out of searches for this 30 second period. sleeping for 25 seconds...')
             sleep(25)
@@ -156,6 +158,9 @@ def media(folder,gif_arg):
 
     '''check if downloaded pic quality is better'''
     if biggest[1] != -1 and biggest[1] > media_size:
+        if biggest[1] < 100000:
+            print('low quality, trying another pic..')
+            return '','','retry','',False,0,'',''
         media = biggest[0]
         print('found better quality pic, using', media)
     elif media_size < 100000:
@@ -203,7 +208,10 @@ def cleanup(temp_img_folder):
                 unlink(file_path)
         except Exception as e:
             print(e)
-    rmdir(temp_img_folder)
+    try:
+        rmdir(temp_img_folder)
+    except Exception as e:
+        pass
 
 
 def danbooru(danbooru_id):
@@ -212,18 +220,19 @@ def danbooru(danbooru_id):
         print('\nchecking details on danbooru.donmai.us')
         try:
             client = Danbooru('danbooru')
-            #logger.dump(client.post_show(danbooru_id),'last_danbooru_response.txt') #debug
-            return client.post_show(danbooru_id)
+            post = client.post_show(danbooru_id)
+            logger.dump(post,'last_danbooru_response.txt') #debug
+            return post
         except Exception as e:
             print(e)
             return ''
 
 
-def tweet(tweet_media, tweet_text, api):
+def tweet(tweet_media, tweet_text, api, me):
     '''sends tweet command to Tweepy'''
     print('uploading pic to twitter..')
     upload_result = api.media_upload(tweet_media)
-    print('sending tweet..')
+    print('sending tweet as',me.screen_name)
     api.update_status(
         media_ids=[upload_result.media_id_string],
         status=tweet_text)
@@ -238,6 +247,3 @@ def welcome():
     print(Figlet(font='slant').renderText('''randomart'''),'\nv6 | logging in..\n')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
         exit('baka! edit settings.txt first')
-    api = config.api
-    myid = api.me()
-    print('welcome, @'+myid.screen_name+'!\ntweeting pictures from', config.source_folder, 'every', config.interval, 'seconds with', config.chance*100, '% chance..')
