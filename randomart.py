@@ -12,7 +12,7 @@ import random
 def main():
     '''runs the whole program'''
     args = parse_args(argv[1:])
-    crashed = False
+    restart = False
     global api
     if args.a:
         auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
@@ -26,20 +26,19 @@ def main():
     alt = args.a
     while True:
         try:
-            if args.a and not crashed:
-                alt = not alt
+            if args.a and not restart:
+                alt = not alt #switch accounts
             if alt:
                 api = tweepy.API(auth2, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
             else:
                 api = tweepy.API(auth1, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
-            post_tweet(args.g, alt)
-            crashed = False
+            restart = post_tweet(args.g, alt)
         except Exception as eeee:
-            crashed = True
+            restart = True
             print(eeee,'\n\nsomething fucked up, restarting bot in 60 sec..\n\nif it happens after start check if you filled settings.txt correctly')
             sleep(60)
             status.welcome()
-        
+
 
 def post_tweet(gif, alt):
     '''check media state and send tweet'''
@@ -56,11 +55,9 @@ def post_tweet(gif, alt):
     if danbooru_id != 0:
         post = status.danbooru(danbooru_id)
         if post != '':
-            if alt and post['rating'] == 's':
+            if (alt and post['rating'] == 's') or (not alt and post['rating'] == 'e'):
                 print('rating is unacceptable:',post['rating'],'trying another pic..')
-                return True
-            elif not alt and post['rating'] == 'e':
-                print('rating is unacceptable:',post['rating'],'trying another pic..')
+                logger.add_post(media_bak)
                 return True
             if post['tag_string_character'].split() != []:
                 copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
