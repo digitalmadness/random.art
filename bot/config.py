@@ -1,10 +1,8 @@
 import os
 import configparser
-import tweepy
 import codecs
-from sys import exit
 
-"""reads configuration file and holds all settings for the bot to function. get out of here stalker, edit settings.txt"""
+'''get out of here stalker, edit settings.txt'''
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -20,8 +18,8 @@ token = twitter_config['token']
 secret_token = twitter_config['secret_token']
 source_folder = app_config['image_folder']
 discard_size = int(app_config['discard_pic_if_less_than_x_kilobytes'])
-chance = float(app_config['execution_chance'])
 interval = int(app_config['time_between_tweets'])
+proxy = app_config['proxy']
 min_followers = int(autofollow_config['minimum_followers_to_consider'])
 custom_following_limit = int(autofollow_config['custom_following_limit'])
 custom_unfollowing_limit = int(autofollow_config['custom_unfollowing_limit'])   
@@ -35,7 +33,10 @@ instafollowback_opt = bool(int(autofollow_config['instant_followback_in_stream_m
 unfollow_nofilter_opt = bool(int(autofollow_config['unfollow_people_doenst_followed_by_this_script']))
 anime_avi_opt = bool(int(autofollow_config['follow_only_people_with_anime_profile_pictures']))
 likeback_opt = bool(int(autofollow_config['when_user_likes_your_tweet_likeback_his_last_tweet']))
-
-auth = tweepy.OAuthHandler(api_key, secret_key)
-auth.set_access_token(token, secret_token)
-api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+alt_config = config['AltAccount']
+alt_key_saucenao = alt_config['api_key_saucenao_alt']
+api_key_alt = alt_config['api_key_alt']
+secret_key_alt = alt_config['secret_key_alt']
+token_alt = alt_config['token_alt']
+secret_token_alt = alt_config['secret_token_alt']
+source_folder_alt = alt_config['image_folder_alt']
