@@ -107,7 +107,7 @@ def post_tweet(gif, alt):
 def parse_args(args):
     '''parsing arguments from command line'''
     parser = ArgumentParser()
-    parser.add_argument('-a', help='use alt account', action='store_true')
+    parser.add_argument('-a', help='multiaccount', action='store_true')
     parser.add_argument('-g', help='tweet gifs only', action='store_true')
     return parser.parse_args(args)
 
