@@ -16,7 +16,8 @@ from subprocess import call
 
 def media(gif,alt,proxify):
     '''set vars and pick random image from folder'''
-    temp_img_folder = ''
+    temp_img_folder = find_temp_media_folder()
+    cleanup(temp_img_folder)
     faces_detected = False
     media = ''
     service_name = ''
@@ -47,7 +48,7 @@ def media(gif,alt,proxify):
         print('pic was already tweeted, trying another file..')
         return '','','retry','',False,0,'',''
     if path.getsize(media) < config.discard_size * 1000:
-        print(int(path.getsize(media) / 1000),'KB < than',config.discard_size,'KB, trying another file..')
+        print(int(path.getsize(media) / 1000),'KB <',config.discard_size,'KB, trying another file..')
         return '','','retry','',False,0,'',''
     media_bak = media
 
@@ -80,9 +81,12 @@ def media(gif,alt,proxify):
         return media,'','api_na','',faces_detected,0,'',media_bak
     if r.status_code != 200:
         if r.status_code == 403:
-            exit('api key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
+            exit('\napi key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
         elif r.status_code == 429:
-            print('saucenao.com api requests limit exceeded!')
+            if config.proxy != 'socks5://user:password@hostname:port' and config.alt_key_saucenao != '':
+                print('\nswitching to another saucenao api key..')
+            else:
+                print('\nsaucenao.com api rate limit exceeded! pls fill api_key_saucenao_alt and proxy in settings or wait')
             return '','','api_exceeded','',False,0,'',''
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
@@ -153,12 +157,11 @@ def media(gif,alt,proxify):
                             print('found better quality pic:',int(biggest[1] / 1000),'KB >',int(path.getsize(media) / 1000),'KB')
                             media = biggest[0]
                             break
-                        elif temp_img_folder != '':
+                        else:
                             cleanup(temp_img_folder)
                     except Exception as e:
                         print(e)
-                        if temp_img_folder != '':
-                            cleanup(temp_img_folder)
+                        cleanup(temp_img_folder)
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
         return media,'','not_art','',False,0,'',media_bak
@@ -199,7 +202,7 @@ def find_temp_media_folder():
 
 
 def cleanup(temp_img_folder):
-    try:
+    if temp_img_folder != '':
         for file in listdir(temp_img_folder):
             try:
                 file_path = path.join(temp_img_folder, file)
@@ -207,12 +210,10 @@ def cleanup(temp_img_folder):
                     unlink(file_path)
             except Exception as e:
                 print(e)
-    except Exception as e:
-        print(e)
-    try:
-        rmdir(temp_img_folder)
-    except Exception as e:
-        pass
+        try:
+            rmdir(temp_img_folder)
+        except Exception as e:
+            print(e)
 
 
 def danbooru(danbooru_id):
@@ -237,13 +238,9 @@ def tweet(tweet_media, tweet_text, api, me):
     api.update_status(
         media_ids=[upload_result.media_id_string],
         status=tweet_text)
-    print('ok!')
 
 
 def welcome():
-    temp_img_folder = find_temp_media_folder()
-    if temp_img_folder != '':
-        cleanup(temp_img_folder)
-    print(Figlet(font='slant').renderText('''randomart'''),'\nv6.2 | logging in..\n') #startup message
+    print(Figlet(font='slant').renderText('''randomart'''),'\nv6.2 | logging in..')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
-        exit('baka! edit settings.txt first')
+        exit('\nbaka! edit settings.txt first')

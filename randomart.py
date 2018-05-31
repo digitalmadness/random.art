@@ -28,10 +28,8 @@ def main():
         try:
             if args.a and not restart:
                 alt = not alt #switch accounts
-            if alt:
-                api = tweepy.API(auth2, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
-            else:
-                api = tweepy.API(auth1, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+            auth = auth2 if alt else auth1
+            api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
             restart = post_tweet(args.g, alt)
         except Exception as eeee:
             restart = True
@@ -46,6 +44,7 @@ def post_tweet(gif, alt):
     proxify = False
     characters = []
     copyright = []
+    print('\nlogged in as @'+api.me().screen_name)
     while media_state != 'art':
         media,tweetxt,media_state,predictions,faces_detected,danbooru_id,temp_img_folder,media_bak = status.media(gif, alt, proxify)
         if media_state == 'not_art':
@@ -58,6 +57,7 @@ def post_tweet(gif, alt):
             if (alt and post['rating'] == 's') or (not alt and post['rating'] == 'e'):
                 print('rating is unacceptable:',post['rating'],'trying another pic..')
                 logger.add_post(media_bak)
+                status.cleanup(temp_img_folder)
                 return True
             if post['tag_string_character'].split() != []:
                 copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
@@ -97,7 +97,7 @@ def post_tweet(gif, alt):
     status.tweet(media, tweetxt, api, api.me())
     status.cleanup(temp_img_folder)
     logger.add_post(media_bak)
-    print('sleeping for',config.interval,'s..')
+    print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)
 
 
