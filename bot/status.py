@@ -16,8 +16,6 @@ from subprocess import call
 
 def media(gif,alt,proxify):
     '''set vars and pick random image from folder'''
-    temp_img_folder = find_temp_media_folder()
-    cleanup(temp_img_folder)
     faces_detected = False
     media = ''
     service_name = ''
@@ -46,11 +44,11 @@ def media(gif,alt,proxify):
     '''log and size checks'''
     if media in set(logger.read_posts()):
         print('pic was already tweeted, trying another file..')
-        return '','','retry','',False,0,'',''
+        return '','','retry','',False,0,''
     if path.getsize(media) < config.discard_size * 1000:
         print(int(path.getsize(media) / 1000),'KB <',config.discard_size,'KB, trying another file..')
-        return '','','retry','',False,0,'',''
-    media_bak = media
+        return '','','retry','',False,0,''
+    media_log = media
 
     '''run neural network'''
     try:
@@ -78,7 +76,7 @@ def media(gif,alt,proxify):
             r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
     except Exception as e:
         print(e)
-        return media,'','api_na','',faces_detected,0,'',media_bak
+        return media,'','api_na','',faces_detected,0,media_log
     if r.status_code != 200:
         if r.status_code == 403:
             exit('\napi key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
@@ -87,7 +85,7 @@ def media(gif,alt,proxify):
                 print('\nswitching to another saucenao api key..')
             else:
                 print('\nsaucenao.com api rate limit exceeded! pls fill api_key_saucenao_alt and proxy in settings or wait')
-            return '','','api_exceeded','',False,0,'',''
+            return '','','api_exceeded','',False,0,''
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
     else:
@@ -98,7 +96,7 @@ def media(gif,alt,proxify):
             #api responded
             print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
         else:
-            return '','','retry','',False,0,'',''
+            return '','','retry','',False,0,''
 
     '''check pic parameters in saucenao.com response'''
     if float(results['results'][0]['header']['similarity']) > minsim:
@@ -142,32 +140,29 @@ def media(gif,alt,proxify):
             print('\ntrying to download better quality pic..')
             for url in ext_urls:
                 if not 'pixiv' in url:
+                    cleanup()
                     call(['image-scraper',url])
                     try:
-                        temp_img_folder = find_temp_media_folder()
-                        find_biggest(temp_img_folder)
+                        find_biggest()
                         if biggest[1] >= 5242880:
                             print('file is too big..')
                             try:
                                 unlink(file_path)
-                                find_biggest(temp_img_folder)
+                                find_biggest()
                             except Exception as e:
                                 print(e)
                         elif biggest[1] >= path.getsize(media):
                             print('found better quality pic:',int(biggest[1] / 1000),'KB >',int(path.getsize(media) / 1000),'KB')
                             media = biggest[0]
                             break
-                        else:
-                            cleanup(temp_img_folder)
                     except Exception as e:
                         print(e)
-                        cleanup(temp_img_folder)
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-        return media,'','not_art','',False,0,'',media_bak
+        return media,'','not_art','',False,0,media_log
     if path.getsize(media) <= 150000:
         print('low quality, trying another pic..')
-        return '','','retry','',False,0,'',''
+        return '','','retry','',False,0,''
 
     '''generate tweet text based on that parameters'''
     if pixiv_id != 0:
@@ -176,15 +171,16 @@ def media(gif,alt,proxify):
         tweetxt = str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time) + '\n[' + ext_urls[0] + ']'
     elif ext_urls != []:
         tweetxt = '[' + ext_urls[0] + ']'
-    return media,tweetxt,'art',predictions,faces_detected,danbooru_id,temp_img_folder,media_bak
+    return media,tweetxt,'art',predictions,faces_detected,danbooru_id,media_log
 
 
-def find_biggest(dir):
+def find_biggest():
     '''filters real pic from all trash on webpage'''
+    temp_img_folder = find_temp_media_folder()
     global biggest
     biggest = ('', -1)
-    for item in listdir(dir):
-        item = dir + '/' + item
+    for item in listdir(temp_img_folder):
+        item = temp_img_folder + '/' + item
         if path.isdir(item):
             find_biggest(item)
         else:
@@ -201,7 +197,8 @@ def find_temp_media_folder():
     return ''
 
 
-def cleanup(temp_img_folder):
+def cleanup():
+    temp_img_folder = find_temp_media_folder()
     if temp_img_folder != '':
         for file in listdir(temp_img_folder):
             try:

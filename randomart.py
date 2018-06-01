@@ -46,9 +46,9 @@ def post_tweet(gif, alt):
     copyright = []
     print('\nlogged in as @'+api.me().screen_name)
     while media_state != 'art':
-        media,tweetxt,media_state,predictions,faces_detected,danbooru_id,temp_img_folder,media_bak = status.media(gif, alt, proxify)
+        media,tweetxt,media_state,predictions,faces_detected,danbooru_id,media_log = status.media(gif, alt, proxify)
         if media_state == 'not_art':
-            logger.add_post(media_bak)
+            logger.add_post(media_log)
         elif media_state == 'api_exceeded':
             proxify = True
     if danbooru_id != 0:
@@ -56,8 +56,7 @@ def post_tweet(gif, alt):
         if post != '':
             if (alt and post['rating'] == 's') or (not alt and post['rating'] == 'e'):
                 print('rating is unacceptable:',post['rating'],'trying another pic..')
-                logger.add_post(media_bak)
-                status.cleanup(temp_img_folder)
+                logger.add_post(media_log)
                 return True
             if post['tag_string_character'].split() != []:
                 copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
@@ -95,8 +94,7 @@ def post_tweet(gif, alt):
         if waifus != '':
             tweetxt += '\n' + waifus
     status.tweet(media, tweetxt, api, api.me())
-    status.cleanup(temp_img_folder)
-    logger.add_post(media_bak)
+    logger.add_post(media_log)
     print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)
 
