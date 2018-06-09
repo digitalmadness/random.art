@@ -14,35 +14,34 @@ import datetime
 
 def main():
     '''runs autofollow addon'''
-    steal_arg = argument_parser(argv[1:]).f
-    stream_arg = argument_parser(argv[1:]).s
-    unfollow_arg = argument_parser(argv[1:]).u
-    if stream_arg:
+    args = parse_args(argv[1:])
+    if args.s:
         print(Figlet(font='slant').renderText('''autostream'''),'\n\nlogging in..')
-    elif unfollow_arg:
+    elif args.u:
         print(Figlet(font='slant').renderText('''autounfollow'''),'\n\nlogging in..')
     else:
         print(Figlet(font='slant').renderText('''autofollow'''),'\n\nlogging in..') #welcome message
     token,secret = get_tokens()
     global api
     api = temp_auth(token, secret)
-    myid = api.me().id
+    me = api.me()
+    myid = me.id
     followers_array = []
     for page in tweepy.Cursor(api.followers_ids, id=myid).pages():
         followers_array.extend(page)
-    logger.save(followers_array,'followers_backup.txt')
+    #logger.save(followers_array,'followers_backup.txt')
     followers_array = set(followers_array)
-    if stream_arg:
+    if args.s:
         global following_array
         global myname
         global liked_tweets_array
         global already_followed_array
-    myname = api.me().screen_name 
+    myname = me.screen_name 
     following_array = []
     for page in tweepy.Cursor(api.friends_ids, id=myid).pages():
         following_array.extend(page)
     print('\nwelcome, @' + myname + '!\n\nfollowers:',len(followers_array),'\nfollowing:',len(following_array))
-    if stream_arg:
+    if args.s:
         following_array = set(following_array)
         liked_tweets_array = []
         already_followed_array = logger.read_followed()
@@ -54,22 +53,22 @@ def main():
             except Exception as e:
                 print('\n\nsomething fucked up:',e,',\nrestarting..')
     else:
-        if steal_arg:
+        if args.f:
             print('\nstealing followers with > ',config.min_followers)
-        elif not unfollow_arg:
+        elif not args.u:
             print('\nsearching for tweets with',config.search_phrase,'and following authors with > ',config.min_followers,'followers')
         stop_code = 'null'
         following_counter = len(following_array)
         following_now_counter = 0
         while True:
-            if unfollow_arg or stop_code == 'following_hardlimit_hit':
+            if args.u or stop_code == 'following_hardlimit_hit':
                 if not config.unfollow_opt:
                     print('unfollowing option disabled in settings! this script cant follow more people, exiting now')
                     break
                 else:
                     unfollow_non_mutuals(following_array,followers_array)
                     following_now_counter = 0
-            if steal_arg:
+            if args.f:
                 stop_code,following_now_counter = steal_followers(following_array, followers_array, myid, following_counter, following_now_counter)
             else:
                 stop_code,following_now_counter = search_new_followers(followers_array, following_counter, config.search_phrase, following_now_counter)
@@ -145,7 +144,7 @@ def search_new_followers(followers_array, following_counter, search_phrase, foll
         print('\nfollowing temporarily not allowed! sleeping 5 min..')
         time.sleep(300)
         return 'restart', following_now_counter
-    already_checked_array = []
+    already_checked_array = logger.read_checked()
     already_followed_array = logger.read_followed()
     for status in tweepy.Cursor(api.search, q=search_phrase).items():
         if following_counter >= config.custom_following_limit:
@@ -181,7 +180,8 @@ def search_new_followers(followers_array, following_counter, search_phrase, foll
                 elif status.user.default_profile_image or status.user.default_profile:
                     print('\n',username,'not customized profile')
                 else:
-                    profile_pic = logger.save_profile_pic(status.user.profile_image_url_https.replace('_normal',''))
+                    if config.anime_avi_opt:
+                        profile_pic = logger.save_profile_pic(status.user.profile_image_url_https.replace('_normal',''))
                     if not config.anime_avi_opt or face_detect.run_face_detection(profile_pic): #detect anime avi
                         status.user.follow()
                         following_now_counter += 1
@@ -222,6 +222,8 @@ def search_new_followers(followers_array, following_counter, search_phrase, foll
 
 def steal_followers(following_array, followers_array, myid, following_counter, following_now_counter):
     '''follows people who follow your target'''
+    if input('\nWARNING!!1! stealing followers may lead to PERMANENT BAN (tested 06/2k18) use normal following routine instead\n\nbut if youre feeling lucky press y to continue:') != 'y':
+        exit()
     update_states()
     if logger.read('follow_allowed_state.txt') == '0':
         print('\nfollowing temporarily not allowed! sleeping 5 min..')
@@ -233,7 +235,7 @@ def steal_followers(following_array, followers_array, myid, following_counter, f
     target_followers_array = []
     for page in tweepy.Cursor(api.followers_ids, id=input('\nenter username whom followers you wanna steal (without @): ')).pages():
         target_followers_array.extend(page)
-        if len(target_followers_array) > 9000:
+        if len(target_followers_array) > 18000:
             break
     for userid in target_followers_array:
         if following_counter >= config.custom_following_limit:
@@ -335,7 +337,7 @@ def unfollow_non_mutuals(following_array,followers_array):
             logger.add_followed(userid)
         print('unfollowed him.. total:',unfollowed_count,'\nsleeping',sleep_time,'sec to avoid detection..\n')
         time.sleep(sleep_time)
-        if unfollowed_count > len(unfollowing_candidates)-1000 or unfollowed_count >= config.custom_unfollowing_limit:
+        if unfollowed_count >= config.custom_unfollowing_limit: #or unfollowed_count > len(unfollowing_candidates)-1000
             sleep_time = randint(3600,7200)
             print('\nunfollowing cycle stopped',unfollowed_count,'users was unfollowed\nsleeping',sleep_time,'sec before another following cycle to avoid detection..\n')
             time.sleep(sleep_time)
@@ -344,8 +346,8 @@ def unfollow_non_mutuals(following_array,followers_array):
 
 def get_tokens():
     '''get temp oauth tokens using ripped off api keys'''
-    consumer_key = 'yqoymTNrS9ZDGsBnlFhIuw'
-    consumer_secret = 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs'
+    consumer_key = '7S2l5rQTuFCj4YJpF7xuTQ'
+    consumer_secret = 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4'
     REQUEST_TOKEN_URL = 'https://api.twitter.com/oauth/request_token'
     ACCESS_TOKEN_URL = 'https://api.twitter.com/oauth/access_token'
     AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
@@ -371,7 +373,7 @@ def get_tokens():
 
 def temp_auth(token,token_secret):
     '''set api with temp oauth tokens'''
-    auth = tweepy.OAuthHandler('yqoymTNrS9ZDGsBnlFhIuw', 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs')
+    auth = tweepy.OAuthHandler('7S2l5rQTuFCj4YJpF7xuTQ', 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4')
     auth.set_access_token(token,token_secret)
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
     return api
@@ -385,7 +387,7 @@ def update_states():
         logger.save('1','follow_allowed_state.txt')
 
 
-def argument_parser(args):
+def parse_args(args):
     '''parse CLI arguments'''
     parser = ArgumentParser()
     parser.add_argument('-f', help='steal followers from other accounts',action='store_true')

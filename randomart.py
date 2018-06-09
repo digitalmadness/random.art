@@ -46,7 +46,7 @@ def post_tweet(gif, alt):
     copyright = []
     print('\nlogged in as @'+api.me().screen_name)
     while media_state != 'art':
-        media,tweetxt,media_state,predictions,faces_detected,danbooru_id,media_log = status.media(gif, alt, proxify)
+        media,tweetxt,url,media_state,predictions,faces_detected,danbooru_id,media_log = status.media(gif, alt, proxify)
         if media_state == 'not_art':
             logger.add_post(media_log)
         elif media_state == 'api_exceeded':
@@ -93,14 +93,14 @@ def post_tweet(gif, alt):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    status.tweet(media, tweetxt, api, api.me())
+    status.tweet(media, tweetxt+'\n['+url+']', api, api.me())
     logger.add_post(media_log)
     print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)
 
 
 def parse_args(args):
-    '''parsing arguments from command line'''
+    '''parse CLI arguments'''
     parser = ArgumentParser()
     parser.add_argument('-a', help='multiaccount', action='store_true')
     parser.add_argument('-g', help='tweet gifs only', action='store_true')
