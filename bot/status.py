@@ -142,7 +142,7 @@ def media(gif,alt,proxify):
                 if not 'pixiv' in url:
                     cleanup()
                     try:
-                        call(['image-scraper',url],timeout=5)
+                        call(['image-scraper',url],timeout=60)
                     except Exception as e:
                         print(e)
                     if find_biggest() == '':
