@@ -51,14 +51,15 @@ def media(gif,alt,proxify):
     media_log = media
 
     '''run neural network'''
-    try:
-        import moeflow
-        neural_opt = config.neural_opt
-    except Exception as e:
-        print(e,'\nneural network not avaliable! some functions are limited :<')
-        neural_opt = False
-    if neural_opt and not media.lower().endswith(('.gif')): #check if neural net enabled and discard gifs
-        predictions,faces_detected = moeflow.neuralnetwork(media)
+    neural_opt = config.neural_opt
+    if neural_opt:
+        try:
+            import moeflow
+            if not media.lower().endswith(('.gif')):
+                predictions,faces_detected = moeflow.neuralnetwork(media)
+        except Exception as e:
+            print(e,'\nneural network not avaliable! some functions are limited :<')
+            neural_opt = False
 
     '''compress pic and upload it to saucenao.com'''
     thumbSize = (150,150)
@@ -121,14 +122,6 @@ def media(gif,alt,proxify):
                 member_name=results['results'][0]['data']['member_name']
                 title=results['results'][0]['data']['title']
             result = 0
-            while pixiv_id == 0 and result < 10:
-                try:
-                    if float(results['results'][result]['header']['similarity']) > minsim:
-                        pixiv_id=results['results'][result]['data']['pixiv_id']
-                except Exception:
-                    pass
-                result += 1
-            result = 0
             while result < 10:
                 try:
                     if float(results['results'][result]['header']['similarity']) > minsim:
@@ -139,7 +132,7 @@ def media(gif,alt,proxify):
         if ext_urls != []:
             print('\ntrying to download better quality pic..')
             for url in ext_urls:
-                if not 'pixiv' in url:
+                if not 'pixiv' in url or 'bcy' in url:
                     cleanup()
                     try:
                         call(['image-scraper',url],timeout=60)
@@ -169,7 +162,10 @@ def media(gif,alt,proxify):
         tweetxt = str(title) + ' by ' + str(member_name)
     elif part != 0:
         tweetxt = str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time)
-    return media,tweetxt,ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
+    if pixiv_id == 0:
+        return media,tweetxt,ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
+    else:
+        return media,tweetxt,'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
 
 
 def find_biggest():
