@@ -77,10 +77,13 @@ def read(file):
         with open(logs_folder + '/' + file, 'r') as f:
             return f.read()
     else:
-        with open(logs_folder + '/' + file, 'a') as f:
+        with open(logs_folder + '/' + file, 'w') as f:
             f.write('1')
             return '1'
 
 
 def fmtime(file):
+    if not os.path.isfile(logs_folder + '/' + file):
+        with open(logs_folder + '/' + file, 'w') as f:
+            f.write('1')
     return os.path.getmtime(logs_folder + '/' + file)
