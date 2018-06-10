@@ -189,7 +189,7 @@ def search_new_followers(followers_array, following_counter, search_phrase, foll
                         if not userid in already_followed_array:
                             already_followed_array.add(userid)
                             logger.add_followed(userid)
-                        sleep_time = uniform(1,2.5)
+                        sleep_time = uniform(50,100)
                         print('\nfollowed',username,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..')
                         time.sleep(sleep_time)
                     else:
@@ -289,7 +289,7 @@ def steal_followers(following_array, followers_array, myid, following_counter, f
                                         already_followed_array.add(userid)
                                         logger.add_followed(userid)
                                     followed_state = True
-                                    sleep_time = uniform(1,2.5)
+                                    sleep_time = uniform(50,100)
                                     print('followed',user.screen_name,'| total following:',following_counter,'| followed now:',following_now_counter,'\nsleeping',sleep_time,'sec to avoid detection..\n')
                                     time.sleep(sleep_time)
                                 except tweepy.TweepError as e:
@@ -327,7 +327,7 @@ def unfollow_non_mutuals(following_array,followers_array):
                 unfollowing_candidates.append(userid)
     print(len(unfollowing_candidates),'candidates for unfollow found\n')
     for unfollowed_count,userid in enumerate(unfollowing_candidates, 1):
-        sleep_time = uniform(0.2,1)
+        sleep_time = uniform(1,10)
         print('user id',userid, 'didnt follow back')
         try:
             api.destroy_friendship(id=userid)
@@ -346,8 +346,8 @@ def unfollow_non_mutuals(following_array,followers_array):
 
 def get_tokens():
     '''get temp oauth tokens using ripped off api keys'''
-    consumer_key = '7S2l5rQTuFCj4YJpF7xuTQ'
-    consumer_secret = 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4'
+    consumer_key = 'yqoymTNrS9ZDGsBnlFhIuw'
+    consumer_secret = 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs'
     REQUEST_TOKEN_URL = 'https://api.twitter.com/oauth/request_token'
     ACCESS_TOKEN_URL = 'https://api.twitter.com/oauth/access_token'
     AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
@@ -373,7 +373,7 @@ def get_tokens():
 
 def temp_auth(token,token_secret):
     '''set api with temp oauth tokens'''
-    auth = tweepy.OAuthHandler('7S2l5rQTuFCj4YJpF7xuTQ', 'L9VHCXMKBPb2eWjvRvQTOEmOyGlH4W50getaQJPya4')
+    auth = tweepy.OAuthHandler('yqoymTNrS9ZDGsBnlFhIuw', 'OMai1whT3sT3XMskI7DZ7xiju5i5rAYJnxSEHaKYvEs')
     auth.set_access_token(token,token_secret)
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
     return api
