@@ -24,7 +24,6 @@ def media(gif,alt,proxify):
     danbooru_id = 0
     member_name = ''
     title = ''
-    tweetxt = ''
     ext_urls = []
     est_time = ''
     minsim = 70
@@ -156,16 +155,12 @@ def media(gif,alt,proxify):
     if path.getsize(media) <= 150000:
         print('low quality, trying another pic..')
         return '','','','retry','',False,0,''
-
-    '''generate tweet text based on that parameters'''
     if pixiv_id != 0:
-        tweetxt = str(title) + ' by ' + str(member_name)
+        return media,str(title),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
     elif part != 0:
-        tweetxt = str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time)
-    if pixiv_id == 0:
-        return media,tweetxt,ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
+        return media,str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
     else:
-        return media,tweetxt,'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
+        return media,'',ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
 
 
 def find_biggest():

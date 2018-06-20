@@ -79,13 +79,13 @@ def post_tweet(gif, alt):
                 duplicate_characters.append(tag)
         characters = characters - set(duplicate_characters)
         if len(characters) < 5:
-            tweetxt += '\n' + ', '.join(characters)
+            tweetxt = ', '.join(characters)
             if copyright != [] and copyright[0] != 'original':
-                tweetxt += ' from ' + copyright[0]
+                tweetxt += ' (' + copyright[0] + ')'
         elif copyright != []:
-            tweetxt += '\n' + copyright[0]
+            tweetxt = copyright[0]
     elif copyright != [] and copyright[0] != 'original':
-        tweetxt += '\n' + copyright[0]
+        tweetxt = copyright[0]
     elif config.neural_opt and faces_detected:
         waifus = ''
         for waifu in predictions:
@@ -93,7 +93,7 @@ def post_tweet(gif, alt):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    status.tweet(media, tweetxt+'\n['+url+']', api, api.me())
+    status.tweet(media, tweetxt+' '+url, api, api.me())
     logger.add_post(media_log)
     print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)
