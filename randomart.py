@@ -14,14 +14,11 @@ def main():
     args = parse_args(argv[1:])
     restart = False
     global api
+    auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
+    auth1.set_access_token(config.token, config.secret_token)
     if args.a:
-        auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
-        auth1.set_access_token(config.token, config.secret_token)
         auth2 = tweepy.OAuthHandler(config.api_key_alt, config.secret_key_alt)
         auth2.set_access_token(config.token_alt, config.secret_token_alt)
-    else:
-        auth1 = tweepy.OAuthHandler(config.api_key, config.secret_key)
-        auth1.set_access_token(config.token, config.secret_token)
     status.welcome()
     alt = args.a
     while True:
@@ -58,24 +55,21 @@ def post_tweet(gif, alt):
                 print('rating is unacceptable:',post['rating'],'trying another pic..')
                 logger.add_post(media_log)
                 return True
-            if post['tag_string_character'].split() != []:
-                copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_copyright'].split()] #removes stuff in brackets
-            else:
-                copyright = post['tag_string_copyright'].split()
+            copyright = post['tag_string_copyright'].split()
+            characters = post['tag_string_character'].split()
             if copyright != []:
-                if copyright[0] != 'original':
-                    characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in post['tag_string_character'].split()]
-                else:
-                    characters = post['tag_string_character'].split()
-                copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in copyright] #format source
+                copyright = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in copyright] #remove (anime_name) from character name
+                if copyright[0] != 'original' and characters != []:
+                    characters = ['{0}'.format(sub(r'\([^)]*\)', '', tag)) for tag in characters] 
+                copyright = ['{0}'.format(tag.replace('_', ' ')) for tag in copyright]
                 copyright = ['{0}'.format(tag.strip()) for tag in copyright]
             if characters != []:
-                characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters] #format characters
+                characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters]
                 characters = set(['{0}'.format(tag.strip()) for tag in characters])
     if len(characters) > 0:
         duplicate_characters = []
         for tag in characters:
-            if next((True for tag2 in characters if tag in tag2 and tag != tag2), False):
+            if next((True for tag2 in characters if tag in tag2 and tag != tag2), False): #search incomplete tags
                 duplicate_characters.append(tag)
         characters = characters - set(duplicate_characters)
         if len(characters) < 5:
