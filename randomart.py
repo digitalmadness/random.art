@@ -41,20 +41,21 @@ def post_tweet(gif, alt):
     proxify = False
     characters = []
     copyright = []
-    print('\nlogged in as @'+api.me().screen_name)
+    myname = api.me().screen_name
+    print('\nlogged in as @' + myname)
     while media_state != 'art':
-        media,tweetxt,url,media_state,predictions,faces_detected,danbooru_id,media_log = status.media(gif, alt, proxify)
+        media,artist,url,media_state,predictions,faces_detected,danbooru_id,media_log = status.media(gif, alt, proxify)
         if media_state == 'not_art':
             logger.add_post(media_log)
         elif media_state == 'api_exceeded':
             proxify = True
-    if danbooru_id != 0:
+    if danbooru_id != 0 and media_state != 'anime':
         post = status.danbooru(danbooru_id)
         if post != '':
-            if (alt and post['rating'] == 's') or (not alt and post['rating'] == 'e'):
+            '''if (alt and post['rating'] == 's') or (not alt and post['rating'] == 'e'):
                 print('rating is unacceptable:',post['rating'],'trying another pic..')
                 logger.add_post(media_log)
-                return True
+                return True'''
             copyright = post['tag_string_copyright'].split()
             characters = post['tag_string_character'].split()
             if copyright != []:
@@ -66,20 +67,17 @@ def post_tweet(gif, alt):
             if characters != []:
                 characters = ['{0}'.format(tag.replace('_', ' ')) for tag in characters]
                 characters = set(['{0}'.format(tag.strip()) for tag in characters])
-    if len(characters) > 0:
-        duplicate_characters = []
-        for tag in characters:
-            if next((True for tag2 in characters if tag in tag2 and tag != tag2), False): #search incomplete tags
-                duplicate_characters.append(tag)
-        characters = characters - set(duplicate_characters)
-        if len(characters) < 5:
-            tweetxt = ', '.join(characters)
-            if copyright != [] and copyright[0] != 'original':
-                tweetxt += ' (' + copyright[0] + ')'
-        elif copyright != []:
-            tweetxt = copyright[0]
-    elif copyright != [] and copyright[0] != 'original':
-        tweetxt = copyright[0]
+            duplicate_characters = set([])
+            for tag in characters:
+                if next((True for tag2 in characters if tag in tag2 and tag != tag2), False): #search incomplete tags
+                    duplicate_characters.add(tag)
+            characters = set(characters) - duplicate_characters
+            if len(characters) < 5:
+                tweetxt = ', '.join(characters)
+                if copyright != [] and copyright[0] != 'original':
+                    tweetxt += ' (' + copyright[0] + ')'
+            elif copyright != [] and copyright[0] != 'original':
+                tweetxt = copyright[0]
     elif config.neural_opt and faces_detected:
         waifus = ''
         for waifu in predictions:
@@ -87,7 +85,14 @@ def post_tweet(gif, alt):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += '\n' + waifus
-    status.tweet(media, tweetxt+' '+url, api, api.me())
+    if artist == '':
+        artist = post['tag_string_artist']
+        artist.replace('_', ' ')
+        artist.strip()
+    if artist != '':
+        status.tweet(media, tweetxt + ' by ' + artist, api, myname)
+    else:
+        status.tweet(media, tweetxt, api, myname)
     logger.add_post(media_log)
     print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)

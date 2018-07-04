@@ -129,12 +129,11 @@ def media(gif,alt,proxify):
                     pass
                 result += 1
         if ext_urls != []:
-            print('\ntrying to download better quality pic..')
             for url in ext_urls:
                 if not 'pixiv' in url or 'bcy' in url:
                     cleanup()
                     try:
-                        call(['image-scraper',url],timeout=60)
+                        call(['image-scraper',url],timeout=60) #trying to download better quality pic
                     except Exception as e:
                         print(e)
                     if find_biggest() == '':
@@ -152,13 +151,13 @@ def media(gif,alt,proxify):
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
         return media,'','','not_art','',False,0,media_log
-    if path.getsize(media) <= 150000:
+    if path.getsize(media) <= 250000:
         print('low quality, trying another pic..')
         return '','','','retry','',False,0,''
     if pixiv_id != 0:
-        return media,str(title),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
+        return media,str(member_name),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
     elif part != 0:
-        return media,str(source) + '\nep. ' + str(part) + ' | timecode: ' + str(est_time),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
+        return media,str(source) + ' ep. ' + str(part) + ' | timecode: ' + str(est_time),ext_urls[0],'anime',predictions,faces_detected,danbooru_id,media_log
     else:
         return media,'',ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
 
@@ -221,17 +220,17 @@ def danbooru(danbooru_id):
             return ''
 
 
-def tweet(tweet_media, tweet_text, api, me):
+def tweet(tweet_media, tweet_text, api, myname):
     '''sends tweet command to Tweepy'''
     print('uploading pic to twitter..')
     upload_result = api.media_upload(tweet_media)
-    print('sending tweet as @'+me.screen_name+'..')
+    print('sending tweet as @'+myname+'..')
     api.update_status(
         media_ids=[upload_result.media_id_string],
         status=tweet_text)
 
 
 def welcome():
-    print(Figlet(font='slant').renderText('''randomart'''),'\nv6.2 | logging in..')
+    print(Figlet(font='slant').renderText('''randomart'''),'\nv6.3 | logging in..')
     if config.source_folder == '/replace/with/path_to_pics_folder/':
         exit('\nbaka! edit settings.txt first')
