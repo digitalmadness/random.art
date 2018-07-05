@@ -15,7 +15,6 @@ from subprocess import call
 
 
 def media(gif,alt,proxify):
-    '''set vars and pick random image from folder'''
     faces_detected = False
     media = ''
     service_name = ''
@@ -28,6 +27,8 @@ def media(gif,alt,proxify):
     est_time = ''
     minsim = 70
     predictions = []
+
+    '''pick random image from folder'''
     if alt:
         media_list = glob(config.source_folder_alt + '*')
     else:
@@ -40,16 +41,16 @@ def media(gif,alt,proxify):
             media = choice(media_list)
     print('\nopened',media)
 
-    '''log and size checks'''
+    '''check if it was tweeted and size'''
     if media in set(logger.read_posts()):
         print('pic was already tweeted, trying another file..')
-        return '','','','retry','',False,0,''
+        return '','','','',10,'',False,0,''
     if path.getsize(media) < config.discard_size * 1000:
         print(int(path.getsize(media) / 1000),'KB <',config.discard_size,'KB, trying another file..')
-        return '','','','retry','',False,0,''
+        return '','','','',10,'',False,0,''
     media_log = media
 
-    '''run neural network'''
+    '''run neural network if enabled and installed'''
     neural_opt = config.neural_opt
     if neural_opt:
         try:
@@ -76,7 +77,7 @@ def media(gif,alt,proxify):
             r = post('http://saucenao.com/search.php?output_type=2&numres=10&minsim=' + str(minsim) + '!&db=999&api_key=' + config.api_key_saucenao, files=files, timeout=60)
     except Exception as e:
         print(e)
-        return media,'','','api_na','',faces_detected,0,media_log
+        return media,'','','','api_na','',faces_detected,0,media_log
     if r.status_code != 200:
         if r.status_code == 403:
             exit('\napi key error! enter proper saucenao api key in settings.txt\n\nget it here https://saucenao.com/user.php?page=search-api')
@@ -85,20 +86,15 @@ def media(gif,alt,proxify):
                 print('\nswitching to another saucenao api key..')
             else:
                 print('\nsaucenao.com api rate limit exceeded! pls fill api_key_saucenao_alt and proxy in settings or wait')
-            return '','','','api_exceeded','',False,0,''
+            return '','','','',11,'',False,0,''
         else:
             print('saucenao.com api unknown error! status code: '+str(r.status_code))
     else:
         logger.save(r.text,'last_saucenao_response.txt') #debug
-        '''analyze saucenao.com response'''
-        results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text)
-        if int(results['header']['user_id'])>0:
-            #api responded
-            print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
-        else:
-            return '','','','retry','',False,0,''
+        results = JSONDecoder(object_pairs_hook=OrderedDict).decode(r.text) #convert json response to dict
+        print('remaining searches 30s|24h: '+str(results['header']['short_remaining'])+'|'+str(results['header']['long_remaining']))
 
-    '''check pic parameters in saucenao.com response'''
+    '''check pic metainfo in saucenao.com response'''
     if float(results['results'][0]['header']['similarity']) > minsim:
         print('hit! '+str(results['results'][0]['header']['similarity']+' analyzing response..'))
         index_id = results['results'][0]['header']['index_id']
@@ -109,7 +105,7 @@ def media(gif,alt,proxify):
             ext_urls=results['results'][0]['data']['ext_urls']
         else:
             result = 0
-            while danbooru_id == 0 and  result < 10:
+            while danbooru_id == 0 and result < 10:
                 try:
                     if float(results['results'][result]['header']['similarity']) > minsim:
                         danbooru_id=results['results'][result]['data']['danbooru_id']
@@ -130,7 +126,7 @@ def media(gif,alt,proxify):
                 result += 1
         if ext_urls != []:
             for url in ext_urls:
-                if not 'pixiv' in url or 'bcy' in url:
+                if not 'pixiv' in url:
                     cleanup()
                     try:
                         call(['image-scraper',url],timeout=60) #trying to download better quality pic
@@ -150,16 +146,16 @@ def media(gif,alt,proxify):
                         break
     else:
         print('miss... '+str(results['results'][0]['header']['similarity']), '\n\ntrying another pic..')
-        return media,'','','not_art','',False,0,media_log
+        return media,'','','',0,'',False,0,media_log
     if path.getsize(media) <= 250000:
         print('low quality, trying another pic..')
-        return '','','','retry','',False,0,''
+        return media,'','','',0,'',False,0,media_log
     if pixiv_id != 0:
-        return media,str(member_name),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),'art',predictions,faces_detected,danbooru_id,media_log
+        return media,str(title),str(member_name),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),1,predictions,faces_detected,danbooru_id,media_log
     elif part != 0:
-        return media,str(source) + ' ep. ' + str(part) + ' | timecode: ' + str(est_time),ext_urls[0],'anime',predictions,faces_detected,danbooru_id,media_log
+        return media,str(source) + ' ep. ' + str(part) + ' | timecode: ' + str(est_time),ext_urls[0],2,predictions,faces_detected,danbooru_id,media_log
     else:
-        return media,'',ext_urls[0],'art',predictions,faces_detected,danbooru_id,media_log
+        return media,'',ext_urls[0],1,predictions,faces_detected,danbooru_id,media_log
 
 
 def find_biggest():
