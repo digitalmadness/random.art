@@ -153,9 +153,9 @@ def media(gif,alt,proxify):
     if pixiv_id != 0:
         return media,str(title),str(member_name),'https://www.pixiv.net/member_illust.php?mode=medium&illust_id='+str(pixiv_id),1,predictions,faces_detected,danbooru_id,media_log
     elif part != 0:
-        return media,str(source) + ' ep. ' + str(part) + ' | timecode: ' + str(est_time),ext_urls[0],2,predictions,faces_detected,danbooru_id,media_log
+        return media,str(source) + ' ep. ' + str(part) + ' | timecode: ' + str(est_time),'',ext_urls[0],2,predictions,faces_detected,danbooru_id,media_log
     else:
-        return media,'',ext_urls[0],1,predictions,faces_detected,danbooru_id,media_log
+        return media,'','',ext_urls[0],1,predictions,faces_detected,danbooru_id,media_log
 
 
 def find_biggest():
@@ -214,16 +214,6 @@ def danbooru(danbooru_id):
         except Exception as e:
             print(e)
             return ''
-
-
-def tweet(tweet_media, tweet_text, api, myname):
-    '''sends tweet command to Tweepy'''
-    print('uploading pic to twitter..')
-    upload_result = api.media_upload(tweet_media)
-    print('sending tweet as @'+myname+'..')
-    api.update_status(
-        media_ids=[upload_result.media_id_string],
-        status=tweet_text)
 
 
 def welcome():

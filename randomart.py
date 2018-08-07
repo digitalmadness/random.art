@@ -52,8 +52,8 @@ def post_tweet(api, gif, alt):
                 return True'''
             copyright = post['tag_string_copyright'].split()
             characters = post['tag_string_character'].split()
-            if artist == '':
-                artist = post['tag_string_artist'].replace('_', ' ').strip()
+            #if artist == '':
+            #    artist = post['tag_string_artist'].replace('_', ' ').strip()
             if copyright != '':
                 copyright = sub(r'\([^)]*\)', '', copyright[0]) #remove (stuff) from anime_name
                 if copyright != 'original' and characters != []:
@@ -79,10 +79,12 @@ def post_tweet(api, gif, alt):
                 waifus += waifu[0] + ' (' + str(int(waifu[1]*100)) + '%) '
         if waifus != '':
             tweetxt += ' ' + waifus
-    if artist != '':
-        status.tweet(media, tweetxt + ' by ' + artist, api, myname)
-    else:
-        status.tweet(media, tweetxt, api, myname)
+    print('uploading pic to twitter..')
+    upload_result = api.media_upload(media)
+    print('sending tweet as @'+myname+'..')
+    api.update_status(
+        media_ids=[upload_result.media_id_string],
+        status=tweetxt+' '+url)
     logger.add_post(media_log)
     print('ok! sleeping for',config.interval,'s before next tweet..')
     sleep(config.interval)
