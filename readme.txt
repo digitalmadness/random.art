@@ -1,6 +1,6 @@
 |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣|                                                                         |
 | (0)linux setup:                                                                  |
-|     git clone https://github.com/digitalmadness/random.art                       |
+|     git clone https://github.com/digitalmadness/twitterimgbot-saucenao           |
 |     sudo apt-get update && sudo apt-get install python3 python3-pip              |
 |     sudo pip3 install tweepy pillow pyfiglet pybooru wget imagescraper           |
 |     wget https://raw.githubusercontent.com/braian87b/tweepy/master/tweepy/api.py |
